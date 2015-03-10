@@ -29,7 +29,7 @@
  * either expressed or implied, of the Airbitz Project.
  */
 
-package com.airbitz.api;
+package com.airbitz.plugins;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -39,6 +39,7 @@ import android.webkit.WebView;
 
 import com.airbitz.R;
 import com.airbitz.models.Wallet;
+import com.airbitz.api.CoreAPI;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -52,6 +53,19 @@ public class PluginFramework {
     public static String JS_BACK = "javascript:window.Airbitz.ui.back();";
     public static String JS_CALLBACK = "javascript:Airbitz._callbacks[%s]('%s');";
     public static String JS_EXCHANGE_UPDATE = "javascript:Airbitz._bridge.exchangeRateUpdate();";
+
+    static class Plugin {
+        public String pluginId;
+        public String name;
+        public String main;
+
+        public Plugin(String pluginId, String name, String main) {
+            this.pluginId = pluginId;
+            this.name = name;
+            this.main = main;
+        }
+    }
+
 
     public interface UiHandler {
         public void showAlert(String title, String message);
@@ -167,10 +181,13 @@ public class PluginFramework {
     private static class PluginContext {
         CoreAPI api;
         UiHandler handler;
+        Plugin plugin;
         PluginFramework framework;
-        PluginContext(PluginFramework framework, UiHandler handler) {
+
+        PluginContext(PluginFramework framework, Plugin plugin, UiHandler handler) {
             this.api = CoreAPI.getApi();
             this.framework = framework;
+            this.plugin = plugin;
             this.handler = handler;
         }
 
@@ -197,16 +214,13 @@ public class PluginFramework {
         @JavascriptInterface
         public void createReceiveRequest(final String cbid, final String walletUUID,
                                          final String name, final String notes) {
-Log.d(TAG, "UUID: " + walletUUID);
             CallbackTask task = new CallbackTask(cbid, framework) {
                 @Override
                 public String doInBackground(Void... v) {
                     Wallet wallet = api.getWalletFromUUID(walletUUID);
                     if (null != wallet) {
-Log.d(TAG, "found wallet!!!");
                         return jsonResult(new PluginReceiveRequest(wallet, name, notes)).toString();
                     } else {
-Log.d(TAG, "NO WALLET!!!");
                         return jsonError().toString();
                     }
                 }
@@ -216,6 +230,7 @@ Log.d(TAG, "NO WALLET!!!");
 
         @JavascriptInterface
         public void requestSpend(String cbid, String uuid, String address, long amountSatoshi) {
+Log.d(TAG, "requestSpend: " + uuid + ", " + address + ", " + amountSatoshi);
             handler.launchSend(cbid, uuid, address, amountSatoshi);
         }
 
@@ -226,8 +241,16 @@ Log.d(TAG, "NO WALLET!!!");
         }
 
         @JavascriptInterface
-        public String storeData() {
-            return "";
+        public void writeData(String key, String value) {
+Log.d(TAG, "writeData: " + key + ": " + value);
+            api.pluginDataSet(plugin.pluginId, key, value);
+        }
+
+        @JavascriptInterface
+        public String readData(String key) {
+            String s =  api.pluginDataGet(plugin.pluginId, key);
+Log.d(TAG, "readData: " + key + ": " + s);
+            return s;
         }
 
         @JavascriptInterface
@@ -302,8 +325,10 @@ Log.d(TAG, "NO WALLET!!!");
         mCoreAPI.removeExchangeRateChangeListener(exchangeListener);
     }
 
-    public void sendSuccess(String cbid) {
-        loadUrl(String.format(JS_CALLBACK, cbid, jsonSuccess().toString()));
+    public void sendSuccess(String cbid, String walletUUID, String txId) {
+        String hex = mCoreAPI.getRawTransaction(walletUUID, txId);
+        Log.d(TAG, hex);
+        loadUrl(String.format(JS_CALLBACK, cbid, jsonResult(new JsonValue(hex)).toString()));
     }
 
     public void sendError(String cbid) {
@@ -323,7 +348,7 @@ Log.d(TAG, "NO WALLET!!!");
         });
     }
 
-    public void buildPluginView(WebView webView) {
+    public void buildPluginView(Plugin plugin, WebView webView) {
         mWebView = webView;
         mWebView.setWebChromeClient(new WebChromeClient() {
             public void onConsoleMessage(String message, int lineNumber, String sourceID) {
@@ -334,8 +359,9 @@ Log.d(TAG, "NO WALLET!!!");
         mWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);
         mWebView.getSettings().setSaveFormData(false);
         mWebView.getSettings().setSavePassword(false);
+        mWebView.getSettings().setSupportZoom(false);
         mWebView.clearFormData();
-        mWebView.addJavascriptInterface(new PluginContext(this, handler), "_native");
+        mWebView.addJavascriptInterface(new PluginContext(this, plugin, handler), "_native");
     }
 
     CoreAPI.OnExchangeRatesChange exchangeListener = new CoreAPI.OnExchangeRatesChange() {

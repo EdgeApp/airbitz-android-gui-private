@@ -167,7 +167,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
 
     public interface OnExitHandler {
         public void error();
-        public void success();
+        public void success(String txId);
     }
 
     private OnExitHandler exitHandler;
@@ -994,7 +994,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                     saveInvalidEntryCount(0);
                     AudioPlayer.play(mActivity, R.raw.bitcoin_sent);
                     if (null != exitHandler) {
-                        exitHandler.success();
+                        exitHandler.success(txResult.getTxId());
                         mActivity.popFragment();
                     } else {
                         mActivity.onSentFunds(mFromWallet.getUUID(), txResult.getTxId());

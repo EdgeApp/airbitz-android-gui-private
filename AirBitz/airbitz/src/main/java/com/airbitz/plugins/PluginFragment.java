@@ -29,7 +29,7 @@
  * either expressed or implied, of the Airbitz Project.
  */
 
-package com.airbitz.fragments.settings;
+package com.airbitz.plugins;
 
 import android.app.Fragment;
 import android.graphics.Color;
@@ -45,11 +45,11 @@ import android.widget.TextView;
 
 import com.airbitz.R;
 import com.airbitz.activities.NavigationActivity;
-import com.airbitz.api.PluginFramework.UiHandler;
-import com.airbitz.api.PluginFramework;
 import com.airbitz.fragments.BaseFragment;
-import com.airbitz.fragments.send.SendFragment;
 import com.airbitz.fragments.send.SendConfirmationFragment;
+import com.airbitz.fragments.send.SendFragment;
+import com.airbitz.plugins.PluginFramework.UiHandler;
+import com.airbitz.plugins.PluginFramework.Plugin;
 import com.airbitz.utils.Common;
 
 public class PluginFragment extends BaseFragment implements NavigationActivity.OnBackPress {
@@ -59,6 +59,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private TextView mTitleTextView;
     private View mView;
     private PluginFramework mFramework;
+    private Plugin mPlugin;
 
     private SendConfirmationFragment mSendConfirmation;
 
@@ -66,6 +67,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         mFramework = new PluginFramework(handler);
         mFramework.setup();
         setRetainInstance(true);
+
+        mPlugin = new Plugin("com.glidera", "Glidera", "file:///android_asset/glidera.html#/exchange/");
     }
 
     @Override
@@ -90,8 +93,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             }
         });
 
-        mFramework.buildPluginView(mWebView);
-        mWebView.loadUrl("file:///android_asset/glidera.html#/exchange/");
+        mFramework.buildPluginView(mPlugin, mWebView);
+        mWebView.loadUrl(mPlugin.main);
         mWebView.setBackgroundColor(0x00000000);
         return mView;
     }
@@ -130,8 +133,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
 
         public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi) {
             final SendConfirmationFragment.OnExitHandler exitHandler = new SendConfirmationFragment.OnExitHandler() {
-                public void success() {
-                    mFramework.sendSuccess(cbid);
+                public void success(String txId) {
+                    mFramework.sendSuccess(cbid, uuid, txId);
                 }
                 public void error() {
                     mFramework.sendError(cbid);
