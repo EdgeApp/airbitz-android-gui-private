@@ -78,6 +78,7 @@ import com.airbitz.fragments.login.twofactor.TwoFactorShowFragment;
 import com.airbitz.objects.BleUtil;
 import com.airbitz.objects.HighlightOnPressButton;
 import com.airbitz.objects.HighlightOnPressImageButton;
+import com.airbitz.plugins.PluginFragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
