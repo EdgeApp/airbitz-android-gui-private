@@ -16,8 +16,16 @@
 </style>
   <!-- <link rel="stylesheet" href="vendors/css/animate.min.css"> -->
   <style>
+/*
+    FIXES FOR WEIRD STUFF
+*/
 * {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 body {
   margin: 20px 0 40px;
@@ -156,16 +164,30 @@ body .exchange-payment-list .ending {
 body .row.next-cancel {
   margin-top: 40px;
 }
+body .exchange-buy-sell-interface input[type="number"] {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-transition: border-color ease-in-out 0.15s, -webkit-box-shadow ease-in-out 0.15s;
+  -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
 body .exchange-buy-sell-interface input[type=text],
 body .exchange-buy-sell-interface input[type=number] {
-  padding: 24px 12px;
-  font-size: 150%;
+  padding: 12px 12px;
+  font-size: 180%;
   color: #0f5791;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
-body .exchange-buy-sell-interface .converted-value {
-  padding: 3px 12px;
-  font-size: 150%;
-  color: #64a6cb;
+body .exchange-buy-sell-interface .input-group-addon {
+  font-size: 180%;
 }
 body .transactions .table thead {
   background: #446275;
@@ -3113,6 +3135,13 @@ var Glidera = (function () {
     },
 
     sellAddress: function(qty, callback) {
+      return this._request(true, '/user/create_sell_address', {
+        'method': 'GET',
+        'callback': callback
+      });
+    },
+
+    sellPrices: function(qty, callback) {
       return this._request(true, '/prices/sell', {
         'method': 'POST',
         'data': {
@@ -3459,7 +3488,7 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa'])
         Airbitz.core.currencyToSatoshi(input, $scope.exchange.currencyNum), false
       );
 
-      $scope.order.orderBtcInput = output;
+      $scope.order.orderBtcInput = parseFloat(output);
     };
 
     $scope.convertBtcValue = function(input) {
@@ -3471,7 +3500,7 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa'])
       output = Airbitz.core.formatCurrency(
         Airbitz.core.satoshiToCurrency(input, $scope.exchange.currencyNum), false
       );
-      $scope.order.orderFiatInput = output;
+      $scope.order.orderFiatInput = parseFloat(output);
     };
     $scope.next = function() {
       TwoFactor.showTwoFactor(function() {
@@ -3503,8 +3532,8 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa'])
           Airbitz.ui.showAlert('Error', error);
         });
       } else {
-        DataFactory.requestSpend(order.transferFromWallet, order.orderBtcInput).then(function() {
-          Airbitz.ui.showAlert('Bought Bitcoin', 'You sold bitcoin!');
+        DataFactory.sell(order.transferToWallet, order.orderBtcInput).then(function() {
+          Airbitz.ui.showAlert('Sold Bitcoin', 'You sold bitcoin!');
           $state.go('exchange');
         }, function(error) {
           Airbitz.ui.showAlert('Error', error);
@@ -4134,11 +4163,11 @@ module.run(['$templateCache', function($templateCache) {
     '          <input\n' +
     '            ng-model="order.orderFiatInput"\n' +
     '            ng-change="convertFiatValue(order.orderFiatInput)"\n' +
-    '            type="text"\n' +
+    '            type="number"\n' +
     '            id="inputFiatAmount"\n' +
-    '            class="form-control"\n' +
     '            placeholder="100.00"\n' +
     '            autofocus="true"\n' +
+    '            step="any"\n' +
     '          >\n' +
     '        </div>\n' +
     '      </div>\n' +
@@ -4149,11 +4178,11 @@ module.run(['$templateCache', function($templateCache) {
     '          <input\n' +
     '            ng-model="order.orderBtcInput"\n' +
     '            ng-change="convertBtcValue(order.orderBtcInput)"\n' +
-    '            type="text"\n' +
+    '            type="number"\n' +
     '            id="inputBtcAmount"\n' +
-    '            class="form-control"\n' +
     '            placeholder="0.5"\n' +
     '            autofocus="true"\n' +
+    '            step="any"\n' +
     '          >\n' +
     '        </div>\n' +
     '      </div>\n' +
@@ -4492,6 +4521,18 @@ module.run(['$templateCache', function($templateCache) {
 </script>
   <script type="text/javascript">
 
+function errorMap(res) {
+  if (!res.code) {
+    return "An unknown error occurred.";
+  }
+  switch(res.code) {
+    case "MissingRequiredParameter":
+      return "This request is missing required data."
+    default:
+      return "An unknown error occurred."
+  }
+}
+
 angular.module('app.dataFactory', ['app.glidera', 'app.2fa', 'app.constants']).
 factory('UserFactory', [
   '$q', '$filter', 'States', 'ExchangeFactory', 'glideraFactory', 'TwoFactor',
@@ -4749,14 +4790,18 @@ factory('DataFactory', [
     exchangeOrder = {};
   };
 
-  factory.buy = function(wallet, qty) {
-    return $q(function (resolve, reject) {
+  var createAddress = function(wallet, name, notes, resolve, reject) {
       Airbitz.core.createReceiveRequest(wallet, {
-        name: 'Glidera',
-        notes: '',
+        name: name,
+        notes: notes,
         success: resolve,
         error: reject
       })
+  };
+
+  factory.buy = function(wallet, qty) {
+    return $q(function (resolve, reject) {
+      createAddress(wallet, 'Glidera', '', resolve, reject);
     }).then(function(data) {
       var address = Airbitz._bridge.inDevMod()
                   ? glideraFactory.sandboxAddress : data['address'];
@@ -4776,25 +4821,42 @@ factory('DataFactory', [
     });
   };
 
-  factory.sell = function(walletId, amountSatoshi) {
+  factory.sell = function(wallet, qty) {
     return $q(function(resolve, reject) {
-      glideraFactory.sellAddress(amountSatoshi, {
-        success:resolve,
-        error:reject
+      glideraFactory.sellAddress(qty, function(e, r, b) {
+        (r == 200) ? resolve(b) : reject(b);
       });
     }).then(function(data) {
+      console.log('________ ' + data);
       var sellAddress = data["sellAddress"];
       return $q(function(resolve, reject) {
-        Airbitz.core.requestSpend(walletId, sellAddress, amountSatoshi, {
-          success: resolve,
+        createAddress(wallet, 'Glidera Refund', '', function(req) {
+          console.log('----- ' + JSON.stringify(req));
+          resolve({'sellAddress': sellAddress, 'refundAddress': req['address']});
+        }, reject);
+      });
+    }).then(function(data) {
+      console.log('sellAddress: ' + data.sellAddress);
+      console.log('refundAddress: ' + data.refundAddress);
+      return $q(function(resolve, reject) {
+        Airbitz.core.requestSpend(wallet, data.sellAddress, qty, {
+          success: function() {
+            resolve({'sellAddress': data.sellAddress,
+                     'refundAddress': data.refundAddress});
+          },
           error: reject
         });
       });
     }).then(function(data) {
-      var refundAddress = data["address"];
-      var signedTx = data["tx"];
-      glideraFactory.sell(TwoFactor.getCode(), refundAddress, signedTx, {useCurrentPrice:true}, function(e, r, b) {
-        e === null ? resolve() : reject();
+      var signedTx = '';
+      return $q(function(resolve, reject) {
+        glideraFactory.sell(TwoFactor.getCode(), data.refundAddress, signedTx, {useCurrentPrice:true}, function(e, r, b) {
+          r === 200 ? resolve(b) : reject(errorMap(b));
+        });
+      });
+    }).catch(function(data) {
+      return $q(function(resolve, reject) {
+        reject(data);
       });
     });
   };
