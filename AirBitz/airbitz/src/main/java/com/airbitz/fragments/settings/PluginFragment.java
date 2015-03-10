@@ -65,6 +65,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     public PluginFragment() {
         mFramework = new PluginFramework(handler);
         mFramework.setup();
+        setRetainInstance(true);
     }
 
     @Override
@@ -90,7 +91,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         });
 
         mFramework.buildPluginView(mWebView);
-        mWebView.loadUrl("file:///android_asset/plugin_example.html#/signup/");
+        mWebView.loadUrl("file:///android_asset/glidera.html#/exchange/");
         mWebView.setBackgroundColor(0x00000000);
         return mView;
     }
@@ -111,6 +112,14 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     }
 
     private UiHandler handler = new UiHandler() {
+        public void showAlert(final String title, final String message) {
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    ((NavigationActivity) getActivity()).ShowFadingDialog(message, null, 5000, true);
+                }
+            });
+        }
+
         public void setTitle(final String title) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
@@ -139,6 +148,22 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     mSendConfirmation.setArguments(bundle);
 
                     ((NavigationActivity) getActivity()).pushFragment(mSendConfirmation, NavigationActivity.Tabs.SETTING.ordinal());
+                }
+            });
+        }
+
+        public void showNavBar() {
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    ((NavigationActivity) getActivity()).showNavBar();
+                }
+            });
+        }
+
+        public void hideNavBar() {
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    ((NavigationActivity) getActivity()).hideNavBar();
                 }
             });
         }
