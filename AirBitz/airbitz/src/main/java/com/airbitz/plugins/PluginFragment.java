@@ -131,7 +131,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             });
         }
 
-        public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi) {
+        public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi,
+                               final String label, final String category, final String notes) {
             final SendConfirmationFragment.OnExitHandler exitHandler = new SendConfirmationFragment.OnExitHandler() {
                 public void success(String txId) {
                     mFramework.sendSuccess(cbid, uuid, txId);
@@ -148,6 +149,10 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     bundle.putString(SendFragment.UUID, address);
                     bundle.putLong(SendFragment.AMOUNT_SATOSHI, amountSatoshi);
                     bundle.putString(SendFragment.FROM_WALLET_UUID, uuid);
+                    bundle.putString(SendFragment.LABEL, label);
+                    bundle.putString(SendFragment.CATEGORY, category);
+                    bundle.putString(SendFragment.NOTES, notes);
+                    bundle.putBoolean(SendFragment.LOCKED, true);
                     mSendConfirmation.setArguments(bundle);
 
                     ((NavigationActivity) getActivity()).pushFragment(mSendConfirmation, NavigationActivity.Tabs.SETTING.ordinal());

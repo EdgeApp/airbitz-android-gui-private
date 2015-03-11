@@ -70,7 +70,8 @@ public class PluginFramework {
     public interface UiHandler {
         public void showAlert(String title, String message);
         public void setTitle(String title);
-        public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi);
+        public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi,
+                               final String label, final String category, final String notes);
         public void showNavBar();
         public void hideNavBar();
         public void exit();
@@ -164,9 +165,9 @@ public class PluginFramework {
         String requestId;
         String address;
 
-        public PluginReceiveRequest(Wallet wallet, String name, String notes) {
+        public PluginReceiveRequest(Wallet wallet, String name, String category, String notes) {
             CoreAPI api = CoreAPI.getApi();
-            requestId = api.createReceiveRequestFor(wallet, name, notes, 0);
+            requestId = api.createReceiveRequestFor(wallet, name, notes, category, 0.0, 0);
             address = api.getRequestAddress(wallet.getUUID(), requestId);
         }
 
@@ -213,13 +214,14 @@ public class PluginFramework {
 
         @JavascriptInterface
         public void createReceiveRequest(final String cbid, final String walletUUID,
-                                         final String name, final String notes) {
+                                         final String name, final String category,
+                                         final String notes) {
             CallbackTask task = new CallbackTask(cbid, framework) {
                 @Override
                 public String doInBackground(Void... v) {
                     Wallet wallet = api.getWalletFromUUID(walletUUID);
                     if (null != wallet) {
-                        return jsonResult(new PluginReceiveRequest(wallet, name, notes)).toString();
+                        return jsonResult(new PluginReceiveRequest(wallet, name, category, notes)).toString();
                     } else {
                         return jsonError().toString();
                     }
@@ -229,9 +231,11 @@ public class PluginFramework {
         }
 
         @JavascriptInterface
-        public void requestSpend(String cbid, String uuid, String address, long amountSatoshi) {
-Log.d(TAG, "requestSpend: " + uuid + ", " + address + ", " + amountSatoshi);
-            handler.launchSend(cbid, uuid, address, amountSatoshi);
+        public void requestSpend(String cbid, String uuid, String address, long amountSatoshi,
+                                 String label, String category, String notes) {
+Log.d(TAG, "requestSpend: " + uuid + ", " + address + ", " + amountSatoshi + " " +
+                             label + " " + category + " " + notes);
+            handler.launchSend(cbid, uuid, address, amountSatoshi, label, category, notes);
         }
 
         @JavascriptInterface

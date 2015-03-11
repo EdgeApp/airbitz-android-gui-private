@@ -308,7 +308,12 @@ _bridge = function() {
         _handleResponse(data, opts);
         delete Airbitz._callbacks[cbid];
       };
-      _native.createReceiveRequest(cbid, wallet.id, options.name || '', options.notes || '');
+      _native.createReceiveRequest(cbid, wallet.id,
+          options.name || '', options.category || '', options.notes || '');
+    },
+
+    finalizeRequest: function(wallet, requestId) {
+      _native.finalizeRequest(wallet.id, requestId);
     },
 
     requestSpend: function(wallet, toAddress, amountSatoshi, options) {
@@ -317,7 +322,8 @@ _bridge = function() {
         _handleResponse(data, opts);
         delete Airbitz._callbacks[cbid];
       };
-      _native.requestSpend(cbid, wallet.id, toAddress, amountSatoshi);
+      _native.requestSpend(cbid, wallet.id, toAddress, amountSatoshi,
+        options.label || '', options.category || '', options.notes || '');
     },
 
     writeData: function(key, data) {
@@ -325,7 +331,7 @@ _bridge = function() {
     },
 
     readData: function(key) {
-      _native.readData(key);
+      return _native.readData(key);
     },
 
     satoshiToCurrency: function(satoshi, currencyNum) {
@@ -394,6 +400,10 @@ _bridge = function() {
   Airbitz.core.createReceiveRequest = function(wallet, options) {
     Airbitz._bridge.createReceiveRequest(wallet, options);
   };
+
+  Airbitz.core.finalizeRequest = function(wallet, requestId) {
+    Airbitz._bridge.finalizeRequest(wallet, requestId);
+  },
 
   Airbitz.core.requestSpend = function(wallet, toAddress, amountSatoshi, options) {
     Airbitz._bridge.requestSpend(wallet, toAddress, amountSatoshi, options);
@@ -6311,10 +6321,83 @@ var Glidera = (function () {
 
   <script type="text/javascript">
 
+angular.module('app.2fa', ['app.dataFactory', 'app.glidera']).
+controller('verify2faController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+    Airbitz.ui.title('2 Factor Verification');
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+
+    var requestCode = function() {
+      TwoFactor.requestCode(function() {
+        // Success, do nothing
+      }, function(error) {
+        Airbitz.ui.showAlert('Error', error);
+      });
+    };
+    $scope.submit2FA = function() {
+      TwoFactor.finish($scope.verificationCode);
+    };
+    $scope.resendSMS = function(phone){
+      requestCode();
+    };
+    requestCode();
+  }]).
+factory('TwoFactor', ['$state', '$q', 'glideraFactory',
+  function($state, $q, glideraFactory) {
+    'use strict';
+
+    var code = '';
+    var nextAction = function() { };
+    var factory = {
+      showTwoFactor: function(finishedCallback) {
+        if (finishedCallback) {
+          this.nextAction = finishedCallback;
+        }
+        $state.go('verify2FA');
+      },
+      requestCode: function() {
+        return $q(function(resolve, reject) {
+          glideraFactory.getTwoFactorCode(function(e, r, b) {
+            r == 200 ? resolve(b) : reject(b);
+          });
+        });
+      },
+      finish: function(c) {
+        this.code = c;
+        if (this.nextAction) {
+          this.nextAction();
+        }
+      },
+      getCode: function() {
+        return this.code;
+      }
+    };
+    return factory;
+  }]);
+
+</script>
+  <script type="text/javascript">
+
 var app = angular.module('app.core', [
   'ui.router',
   'ngAnimate',
   ]);
+
+</script>
+  <script type="text/javascript">
+
+angular.module('app.glidera', ['glidera'])
+.factory('glideraFactory', ['glideraApi', function(glideraApi) {
+    var g = new Glidera({
+      'sandbox': true,
+      'partnerAccessKey': 'ad75fb75b8877f30',
+      'key': 'a529206dd98607f7',
+      'secret': '624e62cf29d139ef49b9b2e2e036b00e'
+    });
+    g.sandboxAddress = 'mk5TSrpQiZEgU5ST4Ly8v1J1YKQFVkCYEy';
+    return g;
+}]);
 
 </script>
   <script type="text/javascript">
@@ -6347,20 +6430,326 @@ run(function($rootScope, $window) {
 </script>
   <script type="text/javascript">
 
-angular.module('app.glidera', ['glidera'])
-.factory('glideraFactory', ['glideraApi', function(glideraApi) {
-    var g = new Glidera({
-      'sandbox': true,
-      'partnerAccessKey': 'ad75fb75b8877f30',
-      'key': 'a529206dd98607f7',
-      'secret': '624e62cf29d139ef49b9b2e2e036b00e'
+angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app.limits'])
+.filter('statusFilter', function() {
+  return function(status) {
+    switch(status) {
+      case 'BASIC_INFO_NOT_VERIFIED':
+      case 'BASIC_INFO_VERIFIED_BANK_ACCOUNT_NEEDED':
+        return 'Not Verified';
+      case 'BASIC_INFO_VERIFIED':
+        return 'Verified';
+      default:
+        return 'ACCOUNT UNKNOWN';
+    }
+  };
+})
+.controller('homeController', ['$scope', '$state', 'DataFactory', 'UserFactory',
+  function ($scope, $state, DataFactory, UserFactory) {
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+  }])
+.controller('dashboardController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'Limits',
+  function ($scope, $state, DataFactory, UserFactory, Limits) {
+    Airbitz.ui.title('Glidera');
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+
+    $scope.limits = Limits.getLimits();
+    Limits.fetchLimits().then(function(limits) {
+      $scope.limits = limits;
     });
-    g.sandboxAddress = 'mk5TSrpQiZEgU5ST4Ly8v1J1YKQFVkCYEy';
-    return g;
-}]);
+
+    $scope.bankAccounts = DataFactory.getBankAccounts();
+    DataFactory.fetchBankAccounts().then(function(bankAccounts) {
+      $scope.bankAccounts = bankAccounts;
+    }, function() {
+      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+    });
+
+    $scope.buy = function(){
+      DataFactory.getOrder(true);
+      $state.go('exchangeOrder', {'orderAction': 'buy'});
+    };
+
+    $scope.sell = function(){
+      DataFactory.getOrder(true);
+      $state.go('exchangeOrder', {'orderAction': 'sell'});
+    };
+
+    $scope.addBankAccount = function(){
+      $state.go('exchangeAddBankAccount');
+    };
+  }])
+.controller('addAccountController',
+  ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+    Airbitz.ui.title('Add Bank Account');
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+    $scope.bankAccount = {};
+    $scope.bankAccount.bankAccountType = 'CHECKING';
+
+    $scope.saveBankAccount = function() {
+      TwoFactor.showTwoFactor(function() {
+        DataFactory.createBankAccount($scope.bankAccount).then(function() {
+          $state.go('exchange');
+        }, function() {
+          Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+        });
+      });
+    };
+  }])
+.controller('editBankAccountController',
+  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
+    Airbitz.ui.title('Edit Bank Account');
+    $scope.account = UserFactory.getUserAccount();
+    $scope.bankAccount = DataFactory.getBankAccount($stateParams.uuid);
+    DataFactory.fetchBankAccount($stateParams.uuid).then(function(bankAccount) {
+      $scope.bankAccount = bankAccount;
+    }, function() {
+      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+    });
+
+    $scope.deposit = {};
+    $scope.verifyAccount = function() {
+      DataFactory.verifyBankAccount(
+          $scope.bankAccount.bankAccountUuid, $scope.deposit.amount1,
+          $scope.deposit.amount2, $scope.bankAccount.description).then(function() {
+        $state.go('exchange');
+      }, function() {
+        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+      });
+    };
+
+    $scope.saveBankAccount = function() {
+      DataFactory.updateBankAccount($scope.bankAccount).then(function() {
+        $state.go('exchange');
+      }, function() {
+        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+      });
+    };
+
+    $scope.deleteBankAccount = function() {
+      TwoFactor.showTwoFactor(function() {
+        DataFactory.deleteBankAccount($scope.bankAccount.bankAccountUuid).then(function() {
+          Airbitz.ui.showAlert('Bank Account Deleted', $scope.bankAccount + ' deleted');
+          $state.go('exchange');
+        }, function(error) {
+          Airbitz.ui.showAlert('Error', error);
+        });
+      });
+    };
+  }])
+
+.controller('orderController',
+  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor', 'Limits',
+  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor, Limits) {
+    Airbitz.ui.title('Place Order');
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+
+    $scope.limits = Limits.getLimits();
+    Limits.fetchLimits().then(function(limits) {
+      $scope.limits = limits;
+    });
+
+    $scope.order = DataFactory.getOrder(false); // initialize new order and clear existing order
+    $scope.order.orderAction = $stateParams.orderAction; // set order action
+
+    $scope.bankAccounts = DataFactory.getBankAccounts();
+    DataFactory.fetchBankAccounts().then(function(bankAccounts) {
+      $scope.bankAccounts = bankAccounts;
+      $scope.order.transferFromBankAccount = bankAccounts[0];
+    }, function() {
+      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
+    });
+
+    DataFactory.getUserWallets().then(function(userWallets) {
+      $scope.userWallets = userWallets;
+      $scope.order.transferToWallet = userWallets[0]
+    }, function(error) {
+      $scope.error = 'Error: Cannot get user wallets.';
+    });
+
+
+    $scope.convertFiatValue = function(input) {
+      // console.log('convert: ' + input + ' fiat to btc');
+      if (typeof(input)==='undefined') input = 0;
+
+      output = Airbitz.core.formatSatoshi(
+        Airbitz.core.currencyToSatoshi(input, $scope.exchange.currencyNum), false
+      );
+
+      $scope.order.orderBtcInput = parseFloat(output);
+    };
+
+    $scope.convertBtcValue = function(input) {
+      // console.log(input + ' satoshi = ' + input / 100000000 + ' BTC');
+      if (typeof(input)==='undefined') input = 0;
+      // convert to btc before currency conversion to match ui
+      input = input * 100000000;
+
+      output = Airbitz.core.formatCurrency(
+        Airbitz.core.satoshiToCurrency(input, $scope.exchange.currencyNum), false
+      );
+      $scope.order.orderFiatInput = parseFloat(output);
+    };
+    $scope.next = function() {
+      if ($scope.order.orderAction == 'buy' && !Limits.isBuyAllowed($scope.order.orderBtcInput)) {
+        Airbitz.ui.showAlert('Error', 'The buy limit will be exceeded. Please reduce your buy amount.');
+        return;
+      } else if ($scope.order.orderAction == 'sell' && !Limits.isSellAllowed($scope.order.orderBtcInput)) {
+        Airbitz.ui.showAlert('Error', 'The sell limit will be exceeded. Please reduce your sell amount.');
+        return;
+      }
+      TwoFactor.showTwoFactor(function() {
+        $state.go("reviewOrder");
+      });
+    };
+  }])
+
+.controller('reviewOrderController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+    var order = DataFactory.getOrder(false);
+    console.log(JSON.stringify(order));
+    $scope.order = order;
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+    if (!order.orderAction) {
+      $state.go('exchange');
+    }
+    $scope.editOrder = function() {
+      $state.go('exchangeOrder', {'orderAction': order.orderAction});
+    };
+    $scope.executeOrder = function() {
+      console.log(JSON.stringify(order));
+      if (order.orderAction == 'buy') {
+        DataFactory.buy(order.transferToWallet, order.orderBtcInput).then(function() {
+          Airbitz.ui.showAlert('Bought Bitcoin', 'You bought bitcoin!');
+          $state.go('exchange');
+        }, function(error) {
+          Airbitz.ui.showAlert('Error', error);
+        });
+      } else {
+        DataFactory.sell(order.transferToWallet, order.orderBtcInput).then(function() {
+          Airbitz.ui.showAlert('Sold Bitcoin', 'You sold bitcoin!');
+          $state.go('exchange');
+        }, function(error) {
+          Airbitz.ui.showAlert('Error', error);
+        });
+      }
+    };
+  }])
+.controller('executeOrderController', ['$scope', '$state', 'DataFactory', 'UserFactory',
+  function ($scope, $state, DataFactory, UserFactory) {
+    $scope.exchange = DataFactory.getExchange();
+    $scope.account = UserFactory.getUserAccount();
+
+    $scope.exchange.confirmDeposit = function(){
+      $state.go('confirmDeposit');
+    };
+  }])
+.controller('transactionsController', ['$scope', '$state', 'DataFactory',
+  function ($scope, $state, DataFactory) {
+    // $scope.transactions = DataFactory.getTransactions();
+    // console.log('TRANSACTIONS: ' + $scope.transactions);
+    DataFactory.getTransactions().then(function(transactions) {
+      $scope.transactions = transactions;
+    })
+
+  }]);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </script>
   <script type="text/javascript">
+
+angular.module('app.limits', ['app.glidera']).
+factory('Limits', ['$q', 'glideraFactory',
+  function($q, glideraFactory) {
+    var limits = {};
+    var factory = {};
+    var toFiat = function(input) {
+      if (typeof(input)==='undefined') input = 0;
+      input = input * 100000000;
+
+      var output = Airbitz.core.formatCurrency(
+        Airbitz.core.satoshiToCurrency(input, 840), false
+      );
+      return parseFloat(output);
+    };
+    factory.reset = function() {
+        limits = {}; 
+    };
+    factory.getLimits = function() {
+        return limits;
+    };
+    factory.isBuyAllowed = function(btc) {
+      if (!limits.dailyBuyRemaining|| !limits.monthlyBuyRemaining) {
+        return false;
+      }
+      var fiat = toFiat(btc);
+      return fiat < limits.dailyBuyRemaining
+          && fiat < limits.monthlyBuyRemaining;
+    },
+    factory.isSellAllowed = function(btc) {
+      if (!limits.dailySellRemaining || !limits.monthlySellRemaining) {
+        return false;
+      }
+      var fiat = toFiat(btc);
+      return fiat < limits.dailySellRemaining
+          && fiat < limits.monthlySellRemaining;
+    },
+    factory.fetchLimits = function() {
+      var deferred = $q.defer();
+      if (limits.length) {
+        deferred.resolve(limits);
+      } else {
+        glideraFactory.userLimits(function(e, r, b) {
+          if (r == 200) {
+            limits = b;
+            deferred.resolve(b);
+          } else {
+            deferred.reject();
+          }
+        });
+        return deferred.promise;
+      }
+    }
+    return factory;
+  }]).
+directive('exchangeLimits', [function() {
+    return {
+      templateUrl: 'app/limits/partials/limits.html'
+    };
+  }]).
+directive('buyLimits', [function() {
+    return {
+      templateUrl: 'app/limits/partials/buy.html'
+    };
+  }]).
+directive('sellLimits', [function() {
+    return {
+      templateUrl: 'app/limits/partials/sell.html'
+    };
+  }]);
+
+</script>
+  <script type="text/javascript">
+
 function priceLink($interval, Prices, scope, element, attrs, callback) {
   var netTimeout;
 
@@ -6383,63 +6772,51 @@ function priceLink($interval, Prices, scope, element, attrs, callback) {
   updateView();
 }
 
-
 angular.module('app.prices', ['app.glidera']).
 factory('Prices', ['$q', 'glideraFactory',
   function($q, glideraFactory) {
-    var currentBuy = { };
-    var currentSell = { };
+    var factory = {};
     var timeDiff = function(date) {
       return (new Date(date).getTime() - new Date().getTime()) / 1000.0;
     };
-    var work = function(data, callback) {
-      if (data && timeDiff(data.expires) > 30) {
-        return $q(function(resolve, reject) {
-          resolve(data);
-        });
+    var cached = function(data) {
+      return (data && timeDiff(data.expires) > 30) ? data : null;
+    };
+    factory.currentBuy = {};
+    factory.currentSell = {};
+    factory.buyUuid = function() {
+      return this.currentBuy.priceUuid;
+    };
+    factory.updateBuy = function() {
+      console.log('updateBuy');
+      var deferred = $q.defer();
+      if (cached(this.currentBuy)) {
+        deferred.resolve(cached(this.currentBuy));
       } else {
-        return callback();
-      }
-    };
-    /* TODO: clean this up....its fugly */
-    return {
-      buyUuid: function() {
-        return currentBuy.priceUuid;
-      },
-      updateBuy: function() {
-        console.log('updateBuy');
-        return work(currentBuy, function() {
-          return $q(function(resolve, reject) {
-            glideraFactory.buyPrices(1, function(e, r, b) {
-              if (r == 200) {
-                currentBuy = b;
-                resolve(b);
-              } else {
-                reject();
-              }
-            });
-          });
-        });
-      },
-      sellUuid: function() {
-        return currentSell.priceUuid;
-      },
-      updateSell: function() {
-        console.log('updateSell');
-        return work(currentSell, function() {
-          return $q(function(resolve, reject) {
-            glideraFactory.sellPrices(1, function(e, r, b) {
-              if (r == 200) {
-                currentSell = b;
-                resolve(b);
-              } else {
-                reject();
-              }
-            });
-          });
+        glideraFactory.buyPrices(1, function(e, r, b) {
+          this.currentBuy = b;
+          (r == 200) ?  deferred.resolve(b) : deferred.reject();
         });
       }
+      return deferred.promise;
     };
+    factory.sellUuid = function() {
+      return this.currentSell.priceUuid;
+    };
+    factory.updateSell = function() {
+      console.log('updateSell');
+      var deferred = $q.defer();
+      if (cached(this.currentSell)) {
+        deferred.resolve(cached(this.currentSell));
+      } else {
+        glideraFactory.sellPrices(1, function(e, r, b) {
+          this.currentSell = b;
+          (r == 200) ?  deferred.resolve(b) : deferred.reject();
+        });
+      }
+      return deferred.promise;
+    };
+    return factory;
   }]).
 directive('priceUpdate', ['$interval', '$filter', 'Prices',
   function($interval, $filter, Prices) {
@@ -6547,294 +6924,6 @@ angular.module('app.user', ['app.dataFactory', 'app.constants'])
         Airbitz.ui.showAlert('Change Phone', 'Change phone: ' + phone);
       };
     }])
-
-</script>
-  <script type="text/javascript">
-
-angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices'])
-.filter('statusFilter', function() {
-  return function(status) {
-    switch(status) {
-      case 'BASIC_INFO_NOT_VERIFIED':
-      case 'BASIC_INFO_VERIFIED_BANK_ACCOUNT_NEEDED':
-        return 'Not Verified';
-      case 'BASIC_INFO_VERIFIED':
-        return 'Verified';
-      default:
-        return 'ACCOUNT UNKNOWN';
-    }
-  };
-})
-.controller('homeController', ['$scope', '$state', 'DataFactory', 'UserFactory',
-  function ($scope, $state, DataFactory, UserFactory) {
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-  }])
-.controller('dashboardController', ['$scope', '$state', 'DataFactory', 'UserFactory',
-  function ($scope, $state, DataFactory, UserFactory) {
-    Airbitz.ui.title('Glidera');
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-
-    $scope.bankAccounts = DataFactory.getBankAccounts();
-    DataFactory.fetchBankAccounts().then(function(bankAccounts) {
-      $scope.bankAccounts = bankAccounts;
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
-
-    $scope.buy = function(){
-      DataFactory.getOrder(true);
-      $state.go('exchangeOrder', {'orderAction': 'buy'});
-    };
-
-    $scope.sell = function(){
-      DataFactory.getOrder(true);
-      $state.go('exchangeOrder', {'orderAction': 'sell'});
-    };
-
-    $scope.addBankAccount = function(){
-      $state.go('exchangeAddBankAccount');
-    };
-  }])
-.controller('addAccountController',
-  ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
-    Airbitz.ui.title('Add Bank Account');
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-    $scope.bankAccount = {};
-    $scope.bankAccount.bankAccountType = 'CHECKING';
-
-    $scope.saveBankAccount = function() {
-      TwoFactor.showTwoFactor(function() {
-        DataFactory.createBankAccount($scope.bankAccount).then(function() {
-          $state.go('exchange');
-        }, function() {
-          Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-        });
-      });
-    };
-  }])
-.controller('editBankAccountController',
-  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
-    Airbitz.ui.title('Edit Bank Account');
-    $scope.account = UserFactory.getUserAccount();
-    $scope.bankAccount = DataFactory.getBankAccount($stateParams.uuid);
-    DataFactory.fetchBankAccount($stateParams.uuid).then(function(bankAccount) {
-      $scope.bankAccount = bankAccount;
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
-
-    $scope.deposit = {};
-    $scope.verifyAccount = function() {
-      DataFactory.verifyBankAccount(
-          $scope.bankAccount.bankAccountUuid, $scope.deposit.amount1,
-          $scope.deposit.amount2, $scope.bankAccount.description).then(function() {
-        $state.go('exchange');
-      }, function() {
-        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-      });
-    };
-
-    $scope.saveBankAccount = function() {
-      DataFactory.updateBankAccount($scope.bankAccount).then(function() {
-        $state.go('exchange');
-      }, function() {
-        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-      });
-    };
-
-    $scope.deleteBankAccount = function() {
-      TwoFactor.showTwoFactor(function() {
-        DataFactory.deleteBankAccount($scope.bankAccount.bankAccountUuid).then(function() {
-          Airbitz.ui.showAlert('Bank Account Deleted', $scope.bankAccount + ' deleted');
-          $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
-      });
-    };
-  }])
-
-.controller('orderController',
-  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
-    Airbitz.ui.title('Place Order');
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-
-    $scope.order = DataFactory.getOrder(false); // initialize new order and clear existing order
-    $scope.order.orderAction = $stateParams.orderAction; // set order action
-
-    $scope.bankAccounts = DataFactory.getBankAccounts();
-    DataFactory.fetchBankAccounts().then(function(bankAccounts) {
-      $scope.bankAccounts = bankAccounts;
-      $scope.order.transferFromBankAccount = bankAccounts[0];
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
-
-    DataFactory.getUserWallets().then(function(userWallets) {
-      $scope.userWallets = userWallets;
-      $scope.order.transferToWallet = userWallets[0]
-    }, function(error) {
-      $scope.error = 'Error: Cannot get user wallets.';
-    });
-
-
-    $scope.convertFiatValue = function(input) {
-      // console.log('convert: ' + input + ' fiat to btc');
-      if (typeof(input)==='undefined') input = 0;
-
-      output = Airbitz.core.formatSatoshi(
-        Airbitz.core.currencyToSatoshi(input, $scope.exchange.currencyNum), false
-      );
-
-      $scope.order.orderBtcInput = parseFloat(output);
-    };
-
-    $scope.convertBtcValue = function(input) {
-      // console.log(input + ' satoshi = ' + input / 100000000 + ' BTC');
-      if (typeof(input)==='undefined') input = 0;
-      // convert to btc before currency conversion to match ui
-      input = input * 100000000;
-
-      output = Airbitz.core.formatCurrency(
-        Airbitz.core.satoshiToCurrency(input, $scope.exchange.currencyNum), false
-      );
-      $scope.order.orderFiatInput = parseFloat(output);
-    };
-    $scope.next = function() {
-      TwoFactor.showTwoFactor(function() {
-        $state.go("reviewOrder");
-      });
-    };
-  }])
-
-.controller('reviewOrderController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
-    var order = DataFactory.getOrder(false);
-    console.log(JSON.stringify(order));
-    $scope.order = order;
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-    if (!order.orderAction) {
-      $state.go('exchange');
-    }
-    $scope.editOrder = function() {
-      $state.go('exchangeOrder', {'orderAction': order.orderAction});
-    };
-    $scope.executeOrder = function() {
-      console.log(JSON.stringify(order));
-      if (order.orderAction == 'buy') {
-        DataFactory.buy(order.transferToWallet, order.orderBtcInput).then(function() {
-          Airbitz.ui.showAlert('Bought Bitcoin', 'You bought bitcoin!');
-          $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
-      } else {
-        DataFactory.sell(order.transferToWallet, order.orderBtcInput).then(function() {
-          Airbitz.ui.showAlert('Sold Bitcoin', 'You sold bitcoin!');
-          $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
-      }
-    };
-  }])
-.controller('executeOrderController', ['$scope', '$state', 'DataFactory', 'UserFactory',
-  function ($scope, $state, DataFactory, UserFactory) {
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-
-    $scope.exchange.confirmDeposit = function(){
-      $state.go('confirmDeposit');
-    };
-  }])
-.controller('transactionsController', ['$scope', '$state', 'DataFactory',
-  function ($scope, $state, DataFactory) {
-    // $scope.transactions = DataFactory.getTransactions();
-    // console.log('TRANSACTIONS: ' + $scope.transactions);
-    DataFactory.getTransactions().then(function(transactions) {
-      $scope.transactions = transactions;
-    })
-
-  }]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</script>
-  <script type="text/javascript">
-
-angular.module('app.2fa', ['app.dataFactory', 'app.glidera']).
-controller('verify2faController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
-    Airbitz.ui.title('2 Factor Verification');
-    $scope.exchange = DataFactory.getExchange();
-    $scope.account = UserFactory.getUserAccount();
-
-    var requestCode = function() {
-      TwoFactor.requestCode(function() {
-        // Success, do nothing
-      }, function(error) {
-        Airbitz.ui.showAlert('Error', error);
-      });
-    };
-    $scope.submit2FA = function() {
-      TwoFactor.finish($scope.verificationCode);
-    };
-    $scope.resendSMS = function(phone){
-      requestCode();
-    };
-    requestCode();
-  }]).
-factory('TwoFactor', ['$state', '$q', 'glideraFactory',
-  function($state, $q, glideraFactory) {
-    'use strict';
-
-    var code = '';
-    var nextAction = function() { };
-    var factory = {
-      showTwoFactor: function(finishedCallback) {
-        if (finishedCallback) {
-          this.nextAction = finishedCallback;
-        }
-        $state.go('verify2FA');
-      },
-      requestCode: function() {
-        return $q(function(resolve, reject) {
-          glideraFactory.getTwoFactorCode(function(e, r, b) {
-            r == 200 ? resolve(b) : reject(b);
-          });
-        });
-      },
-      finish: function(c) {
-        this.code = c;
-        if (this.nextAction) {
-          this.nextAction();
-        }
-      },
-      getCode: function() {
-        return this.code;
-      }
-    };
-    return factory;
-  }]);
 
 </script>
   <script type="text/javascript">
@@ -7248,6 +7337,7 @@ module.run(['$templateCache', function($templateCache) {
     '  </div>\n' +
     '</div>\n' +
     '\n' +
+    '<div exchange-limits></div>\n' +
     '\n' +
     '<div class="exchange-payment-list row">\n' +
     '  <div class="col-xs-12">\n' +
@@ -7267,7 +7357,6 @@ module.run(['$templateCache', function($templateCache) {
     '    </ul>\n' +
     '  </div>\n' +
     '</div>\n' +
-    '\n' +
     '\n' +
     '<div class="row">\n' +
     '  <div class="col-xs-12">\n' +
@@ -7397,6 +7486,10 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '      <div class="row text-right" style="margin-top: 40px;">\n' +
     '        <div class="col-xs-12">\n' +
+    '          <div class="pull-left">\n' +
+    '            <span ng-show="{{order.orderAction==\'buy\'}}" buy-limits></span>\n' +
+    '            <span ng-show="{{order.orderAction==\'sell\'}}" sell-limits></span>\n' +
+    '          </div>\n' +
     '          <button type="button" ui-sref="exchange" class="buy-sell-next btn btn-lg btn-link">Cancel</button>\n' +
     '          <button type="submit" class="buy-sell-next btn btn-lg btn-success">Next</button>\n' +
     '        </div>\n' +
@@ -7536,6 +7629,60 @@ module.run(['$templateCache', function($templateCache) {
     '  </div>\n' +
     '\n' +
     '</div>');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/limits/partials/buy.html',
+    '<table class="table">\n' +
+    '  <tr><td>Daily Buy Remaining:</td><td>{{ limits.dailyBuyRemaining | currency:"$"}}</td></tr>\n' +
+    '  <tr><td>Monthly Buy Remaining:</td><td>{{ limits.monthlyBuyRemaining | currency:"$"}}</td></tr>\n' +
+    '</table>\n' +
+    '');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/limits/partials/limits.html',
+    '<div class="row">\n' +
+    '  <div class="col-xs-12">\n' +
+    '    <table class="table">\n' +
+    '      <tr><td>Daily Buy Remaining:</td><td>{{ limits.dailyBuyRemaining | currency:"$"}}</td></tr>\n' +
+    '      <tr><td>Daily Sell Remaining:</td><td>{{ limits.dailySellRemaining | currency:"$"}}</td></tr>\n' +
+    '      <tr><td>Monthly Buy Remaining:</td><td>{{ limits.monthlyBuyRemaining | currency:"$"}}</td></tr>\n' +
+    '      <tr><td>Monthly Sell Remaining:</td><td>{{ limits.monthlySellRemaining | currency:"$"}}</td></tr>\n' +
+    '    </table>\n' +
+    '  </div>\n' +
+    '</div>\n' +
+    '');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/limits/partials/sell.html',
+    '<table class="table">\n' +
+    '  <tr><td>Daily Sell Remaining:</td><td>{{ limits.dailySellRemaining | currency:"$"}}</td></tr>\n' +
+    '  <tr><td>Monthly Sell Remaining:</td><td>{{ limits.monthlySellRemaining | currency:"$"}}</td></tr>\n' +
+    '</table>\n' +
+    '');
 }]);
 })();
 
@@ -7815,6 +7962,7 @@ function errorMap(res) {
   switch(res.code) {
     case "MissingRequiredParameter":
       return "This request is missing required data."
+    case "InvalidParameterValue":
     case "UnauthorizedException":
       return res.message;
     default:
@@ -7822,7 +7970,7 @@ function errorMap(res) {
   }
 }
 
-angular.module('app.dataFactory', ['app.glidera', 'app.2fa', 'app.constants']).
+angular.module('app.dataFactory', ['app.glidera', 'app.2fa', 'app.constants', 'app.limits']).
 factory('UserFactory', [
   '$q', '$filter', 'States', 'ExchangeFactory', 'glideraFactory', 'TwoFactor',
   function($q, $filter, States, ExchangeFactory, glideraFactory, TwoFactor) {
@@ -8040,32 +8188,44 @@ factory('DataFactory', [
     exchangeOrder = {};
   };
 
-  var createAddress = function(wallet, name, notes, resolve, reject) {
+  var createAddress = function(wallet, name, category, notes, resolve, reject) {
       Airbitz.core.createReceiveRequest(wallet, {
         name: name,
+        category: category,
         notes: notes,
         success: resolve,
         error: reject
       })
   };
 
-  factory.buy = function(wallet, qty) {
-    return $q(function (resolve, reject) {
-      createAddress(wallet, 'Glidera', '', resolve, reject);
-    }).then(function(data) {
-      var address = Airbitz._bridge.inDevMod()
-                  ? glideraFactory.sandboxAddress : data['address'];
-      return $q(function(resolve, reject) {
-        if (address) {
-          var opts = {'priceUuid': Prices.buyUuid() };
-          glideraFactory.buy(TwoFactor.getCode(), address, qty, opts, function(e, r, b) {
-            console.log(JSON.stringify(b));
-            r === 200 ? resolve() : reject(errorMap(b));
-          });
+  var executeBuy = function(wallet, qty, request) {
+    var deferred = $q.defer(),
+        requestId = request['requestId'],
+        address = Airbitz._bridge.inDevMod()
+                ? glideraFactory.sandboxAddress : request['address'];
+    if (address) {
+      var opts = {'priceUuid': Prices.buyUuid()};
+      glideraFactory.buy(TwoFactor.getCode(), address, qty, opts, function(e, r, b) {
+        console.log(JSON.stringify(b));
+        if (r == 200) {
+          Airbitz.core.finalizeRequest(wallet, requestId);
+          deferred.resolve();
         } else {
-          reject('Unable to obtain a destination address. Please try again later.');
+          deferred.reject(errorMap(b));
         }
       });
+    } else {
+      deferred.reject('Unable to obtain a destination address. Please try again later.');
+    }
+    return deferred.promise;
+  };
+
+  factory.buy = function(wallet, qty) {
+    // TODO: check buy limits
+    return $q(function (resolve, reject) {
+      createAddress(wallet, 'Glidera', 'Transfer:Glidera', '', resolve, reject);
+    }).then(function(request) {
+      return executeBuy(wallet, qty, request);
     }, function(error) {
       return $q(function(resolve, reject) {
         reject(error);
@@ -8078,6 +8238,7 @@ factory('DataFactory', [
   };
 
   factory.sell = function(wallet, qty) {
+    // TODO: check sell limits
     return $q(function(resolve, reject) {
       glideraFactory.sellAddress(qty, function(e, r, b) {
         (r == 200) ? resolve(b) : reject(b);
@@ -8085,7 +8246,7 @@ factory('DataFactory', [
     }).then(function(data) {
       var sellAddress = data["sellAddress"];
       return $q(function(resolve, reject) {
-        createAddress(wallet, 'Glidera Refund', '', function(req) {
+        createAddress(wallet, 'Glidera Refund', 'Transfer:Refund', '', function(req) {
           resolve({'sellAddress': sellAddress,
                    'refundAddress': req['address']});
         }, reject);
@@ -8095,6 +8256,9 @@ factory('DataFactory', [
       console.log('refundAddress: ' + data.refundAddress);
       return $q(function(resolve, reject) {
         Airbitz.core.requestSpend(wallet, data.sellAddress, btcToSatoshi(qty), {
+          label: 'Glidera', 
+          category: 'Transfer:Glidera',
+          notes: '', 
           success: function(signedTx) {
             resolve({'sellAddress': data.sellAddress,
                      'refundAddress': data.refundAddress,
