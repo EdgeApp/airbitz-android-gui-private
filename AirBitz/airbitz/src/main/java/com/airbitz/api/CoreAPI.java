@@ -1752,8 +1752,12 @@ public class CoreAPI {
         public void setError(String error) { this.error = error; }
     }
 
-    //this is a blocking call
     public TxResult InitiateTransferOrSend(Wallet sourceWallet, String destinationAddress, long satoshi, String label) {
+        return InitiateTransferOrSend(sourceWallet, destinationAddress, satoshi, label, "", "");
+    }
+
+    //this is a blocking call
+    public TxResult InitiateTransferOrSend(Wallet sourceWallet, String destinationAddress, long satoshi, String label, String category, String notes) {
         TxResult txResult = new TxResult();
 
         tABC_Error error = new tABC_Error();
@@ -1781,8 +1785,8 @@ public class CoreAPI {
             } else {
                 details.setSzName(label);
             }
-            details.setSzNotes("");
-            details.setSzCategory("");
+            details.setSzCategory(category == null ? "" : category);
+            details.setSzNotes(notes == null ? "" : notes);
             details.setAttributes(0x2); //for our own use (not used by the core)
 
             SWIGTYPE_p_long txid = core.new_longp();

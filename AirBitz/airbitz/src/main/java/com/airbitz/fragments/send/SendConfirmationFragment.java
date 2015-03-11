@@ -134,6 +134,9 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
 
     private String mUUIDorURI;
     private String mLabel;
+    private String mCategory;
+    private String mNotes;
+    private Boolean mLocked = false;
     private Boolean mIsUUID;
     private long mAmountMax;
     private long mAmountToSendSatoshi = -1;
@@ -697,7 +700,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
              mSuccessFragment.setArguments(bundle);
              mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.SEND.ordinal());
 
-             mSendOrTransferTask = new SendOrTransferTask(mSourceWallet, mUUIDorURI, mAmountToSendSatoshi, mLabel);
+             mSendOrTransferTask = new SendOrTransferTask(mSourceWallet, mUUIDorURI, mAmountToSendSatoshi, mLabel, mCategory, mNotes);
              mSendOrTransferTask.execute();
          }
         resetSlider();
@@ -763,8 +766,11 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
         } else {
             mUUIDorURI = bundle.getString(SendFragment.UUID);
             mLabel = bundle.getString(SendFragment.LABEL, "");
+            mCategory = bundle.getString(SendFragment.CATEGORY, "");
+            mNotes = bundle.getString(SendFragment.NOTES, "");
             mAmountToSendSatoshi = bundle.getLong(SendFragment.AMOUNT_SATOSHI);
             mIsUUID = bundle.getBoolean(SendFragment.IS_UUID);
+            mLocked = bundle.getBoolean(SendFragment.LOCKED);
             mSourceWallet = mCoreAPI.getWalletFromUUID(bundle.getString(SendFragment.FROM_WALLET_UUID));
             mWalletForConversions = mSourceWallet;
             if (mIsUUID) {
@@ -775,6 +781,17 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
             if(mWallets.get(i).getName().equals(mSourceWallet.getName())) {
                 mWalletSpinner.setSelection(i);
             }
+        }
+        mBitcoinField.setEnabled(!mLocked);
+        mBitcoinField.setFocusable(!mLocked);
+        mFiatField.setEnabled(!mLocked);
+        mFiatField.setFocusable(!mLocked);
+        mWalletSpinner.setEnabled(!mLocked);
+        mWalletSpinner.setFocusable(!mLocked);
+        if (mLocked) {
+            mMaxButton.setVisibility(View.INVISIBLE);
+        } else {
+            mMaxButton.setVisibility(View.VISIBLE);
         }
 
         if (mToWallet != null) {
@@ -955,13 +972,17 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
         private final String mAddress;
         private final long mSatoshi;
         private final String mLabel;
+        private final String mCategory;
+        private final String mNotes;
         private Wallet mFromWallet;
 
-        SendOrTransferTask(Wallet fromWallet, String address, long amount, String label) {
+        SendOrTransferTask(Wallet fromWallet, String address, long amount, String label, String category, String notes) {
             mFromWallet = fromWallet;
             mAddress = address;
             mSatoshi = amount;
             mLabel = label;
+            mCategory = category;
+            mNotes = notes;
         }
 
         @Override
@@ -972,7 +993,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
         @Override
         protected CoreAPI.TxResult doInBackground(Void... params) {
             Log.d(TAG, "Initiating SEND");
-            return mCoreAPI.InitiateTransferOrSend(mFromWallet, mAddress, mSatoshi, mLabel);
+            return mCoreAPI.InitiateTransferOrSend(mFromWallet, mAddress, mSatoshi, mLabel, mCategory, mNotes);
         }
 
         @Override
