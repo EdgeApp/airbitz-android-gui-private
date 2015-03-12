@@ -698,7 +698,11 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
              Bundle bundle = new Bundle();
              bundle.putString(WalletsFragment.FROM_SOURCE, SuccessFragment.TYPE_SEND);
              mSuccessFragment.setArguments(bundle);
-             mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.SEND.ordinal());
+             if (null != exitHandler) {
+                mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.MORE.ordinal());
+             } else {
+                mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.SEND.ordinal());
+             }
 
              mSendOrTransferTask = new SendOrTransferTask(mSourceWallet, mUUIDorURI, mAmountToSendSatoshi, mLabel, mCategory, mNotes);
              mSendOrTransferTask.execute();
@@ -1015,8 +1019,9 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                     saveInvalidEntryCount(0);
                     AudioPlayer.play(mActivity, R.raw.bitcoin_sent);
                     if (null != exitHandler) {
-                        exitHandler.success(txResult.getTxId());
                         mActivity.popFragment();
+                        mActivity.popFragment();
+                        exitHandler.success(txResult.getTxId());
                     } else {
                         mActivity.onSentFunds(mFromWallet.getUUID(), txResult.getTxId());
                     }

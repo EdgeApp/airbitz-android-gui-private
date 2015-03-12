@@ -113,6 +113,7 @@ import com.airbitz.objects.AudioPlayer;
 import com.airbitz.objects.Calculator;
 import com.airbitz.objects.Numberpad;
 import com.airbitz.objects.UserReview;
+import com.airbitz.plugins.PluginFragment;
 
 import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.UpdateManager;
@@ -1856,7 +1857,12 @@ public class NavigationActivity extends Activity
         mDrawerBuySell.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "Buy/Sell pressed");
+                mDrawer.closeDrawer(mDrawerView);
+                switchFragmentThread(Tabs.MORE.ordinal());
+                mNavStacks[Tabs.MORE.ordinal()].clear();
+
+                Fragment fragment = new PluginFragment();
+                pushFragment(fragment, NavigationActivity.Tabs.MORE.ordinal());
             }
         });
 
