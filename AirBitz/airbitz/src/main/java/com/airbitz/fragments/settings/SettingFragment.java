@@ -78,7 +78,6 @@ import com.airbitz.fragments.login.twofactor.TwoFactorShowFragment;
 import com.airbitz.objects.BleUtil;
 import com.airbitz.objects.HighlightOnPressButton;
 import com.airbitz.objects.HighlightOnPressImageButton;
-import com.airbitz.plugins.PluginFragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,7 +136,6 @@ public class SettingFragment extends BaseFragment {
     private HighlightOnPressButton mPesoButton;
     private HighlightOnPressButton mYuanButton;
     private HighlightOnPressButton mLogoutButton;
-    private HighlightOnPressButton mPluginButton;
     private AutoLogoffDialogManager mAutoLogoffManager;
     private String[] mCurrencyItems;
     private String[] mDistanceItems;
@@ -218,15 +216,6 @@ public class SettingFragment extends BaseFragment {
             public void onClick(View view) {
                 saveCurrentSettings();
                 ((NavigationActivity) getActivity()).Logout(false);
-            }
-        });
-
-        mPluginButton = (HighlightOnPressButton) mView.findViewById(R.id.settings_button_plugin);
-        mPluginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Fragment fragment = new PluginFragment();
-                ((NavigationActivity) getActivity()).pushFragment(fragment, NavigationActivity.Tabs.SETTING.ordinal());
             }
         });
 

@@ -116,6 +116,9 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
 
     private UiHandler handler = new UiHandler() {
         public void showAlert(final String title, final String message) {
+            if (getActivity() == null) {
+                return;
+            }
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
                     ((NavigationActivity) getActivity()).ShowFadingDialog(message, null, 5000, true);
@@ -155,7 +158,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     bundle.putBoolean(SendFragment.LOCKED, true);
                     mSendConfirmation.setArguments(bundle);
 
-                    ((NavigationActivity) getActivity()).pushFragment(mSendConfirmation, NavigationActivity.Tabs.SETTING.ordinal());
+                    ((NavigationActivity) getActivity()).pushFragment(mSendConfirmation, NavigationActivity.Tabs.MORE.ordinal());
                 }
             });
         }
@@ -179,7 +182,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         public void exit() {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    ((NavigationActivity) getActivity()).popFragment();
+                    ((NavigationActivity) getActivity()).onBackPressed();
                 }
             });
         }
