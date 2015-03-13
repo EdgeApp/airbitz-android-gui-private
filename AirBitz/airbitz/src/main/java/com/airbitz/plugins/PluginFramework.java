@@ -233,8 +233,6 @@ public class PluginFramework {
         @JavascriptInterface
         public void requestSpend(String cbid, String uuid, String address, long amountSatoshi,
                                  String label, String category, String notes) {
-Log.d(TAG, "requestSpend: " + uuid + ", " + address + ", " + amountSatoshi + " " +
-                             label + " " + category + " " + notes);
             handler.launchSend(cbid, uuid, address, amountSatoshi, label, category, notes);
         }
 
@@ -246,14 +244,14 @@ Log.d(TAG, "requestSpend: " + uuid + ", " + address + ", " + amountSatoshi + " "
 
         @JavascriptInterface
         public void writeData(String key, String value) {
-Log.d(TAG, "writeData: " + key + ": " + value);
+            Log.d(TAG, "writeData: " + key + ": " + value);
             api.pluginDataSet(plugin.pluginId, key, value);
         }
 
         @JavascriptInterface
         public String readData(String key) {
             String s =  api.pluginDataGet(plugin.pluginId, key);
-Log.d(TAG, "readData: " + key + ": " + s);
+            Log.d(TAG, "readData: " + key + ": " + s);
             return s;
         }
 
