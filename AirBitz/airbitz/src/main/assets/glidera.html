@@ -6336,8 +6336,8 @@ var Glidera = (function () {
   <script type="text/javascript">
 
 angular.module('app.2fa', ['app.dataFactory', 'app.glidera']).
-controller('verify2faController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+controller('verify2faController', ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
     Airbitz.ui.title('2 Factor Verification');
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
@@ -6345,7 +6345,9 @@ controller('verify2faController', ['$scope', '$state', 'DataFactory', 'UserFacto
 
     var requestCode = function() {
       TwoFactor.requestCode().then(function(hasNumber) {
-        $scope.hasNumber = hasNumber;
+        if ($stateParams.confirmNumber == 'confirm') {
+          $scope.hasNumber = hasNumber;
+        }
       }, function(error) {
         Airbitz.ui.showAlert('Error', error);
       });
@@ -6364,13 +6366,32 @@ factory('TwoFactor', ['$state', '$q', 'glideraFactory',
 
     var code = '';
     var oldCode = '';
+    var lastFetch = null;
     var nextAction = function() { };
     var factory = {};
-    factory.showTwoFactor = function(finishedCallback) {
-      if (finishedCallback) {
-        this.nextAction = finishedCallback;
+    var that = this;
+    factory.cached = function() {
+      if (!that.lastFetch || !that.code) {
+        return false;
       }
-      $state.go('verify2FA');
+      // if the code is less than 2 minutes old, don't ask for 2fa
+      return ((new Date().getTime() - that.lastFetch.getTime()) / 1000.0) <= 2 * 60;
+    };
+    factory.confirmTwoFactor = function(finishedCallback) {
+      if (finishedCallback) {
+        that.nextAction = finishedCallback;
+      }
+      $state.go('verify2FA', {'confirmNumber': 'confirm'});
+    };
+    factory.showTwoFactor = function(finishedCallback) {
+      if (factory.cached())  {
+        finishedCallback(that.code);
+      } else {
+        if (finishedCallback) {
+          that.nextAction = finishedCallback;
+        }
+        $state.go('verify2FA', {'confirmNumber': ''});
+      }
     };
     factory.checkPhone = function() {
       var deferred = $q.defer();
@@ -6384,23 +6405,24 @@ factory('TwoFactor', ['$state', '$q', 'glideraFactory',
         var hasNumber = data.phoneNumber !== null ? true : false;
         var d = $q.defer();
         glideraFactory.getTwoFactorCode(function(e, r, b) {
+          that.lastFetch = new Date();
           r >= 200 && r < 300 ? d.resolve(hasNumber) : d.reject(b);
         });
         return d.promise;
       });
     };
     factory.finish = function(c, o) {
-      this.code = c;
-      this.oldCode = o;
-      if (this.nextAction) {
-        this.nextAction();
+      that.code = c;
+      that.oldCode = o;
+      if (that.nextAction) {
+        that.nextAction();
       }
     };
     factory.getCode = function() {
-      return this.code;
+      return that.code;
     };
     factory.getOldCode = function() {
-      return this.oldCode;
+      return that.oldCode;
     }
     return factory;
   }]);
@@ -6422,8 +6444,8 @@ angular.module('app.glidera', ['glidera'])
     var g = new Glidera({
       'sandbox': true,
       'partnerAccessKey': 'ad75fb75b8877f30',
-      'key': 'a529206dd98607f7',
-      'secret': '624e62cf29d139ef49b9b2e2e036b00e'
+      // 'key': 'a529206dd98607f7',
+      // 'secret': '624e62cf29d139ef49b9b2e2e036b00e'
     });
     g.sandboxAddress = 'mk5TSrpQiZEgU5ST4Ly8v1J1YKQFVkCYEy';
     var account = Airbitz.core.readData('account') || {};
@@ -6956,7 +6978,7 @@ angular.module('app.user', ['app.dataFactory', 'app.constants'])
       };
       $scope.submitPhone = function(){
         DataFactory.addPhoneNumber($scope.account.phone).then(function() {
-          TwoFactor.showTwoFactor(verifyCode);
+          TwoFactor.confirmTwoFactor(verifyCode);
         }, function(error) {
           Airbitz.ui.showAlert('Error', 'Unable to add phone number at this time.');
         });
@@ -7053,7 +7075,7 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
     })
     // route for two factor verifications
     .state("verify2FA", {
-      url: "/verify/twofa/",
+      url: "/verify/twofa/:confirmNumber",
       templateUrl: "app/2fa/partials/verify.twofactor.html",
       controller: "verify2faController",
     })
@@ -7285,42 +7307,63 @@ module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/exchange/partials/edit.bankAccount.html',
     '\n' +
     '<div ng-if="bankAccount.status === \'Pending\'">\n' +
+    '    <form class="form" name="verifyForm" novalidate>\n' +
+    '        <h3>Verify Account</h3>\n' +
+    '        <div class="row">\n' +
+    '            <p class="col-xs-12" style="margin-top: 15px; margin-bottom: 15px;">Please check your account for two deposits from <label class="label label-info">{{ exchange.depositId }}</label> and input them below.</p>\n' +
+    '            <div class="col-xs-6">\n' +
+    '                <label for="inputDepositAmount1" class="">Deposit 1</label>\n' +
+    '                <input ng-model="deposit.amount1" name="amount1" type="number" id="inputDepositAmount1" class="form-control"\n' +
+    '                       placeholder="0.35"\n' +
+    '                       autofocus=""\n' +
+    '                       autocomplete="off"\n' +
+    '                       required="" />\n' +
+    '                <div ng-show="verifyForm.$submitted || verifyForm.amount1.$touched">\n' +
+    '                    <div ng-show="verifyForm.amount1.$error.required">Required.</div>\n' +
+    '                    <div ng-show="verifyForm.amount1.$error.number">This is not a valid number.</div>\n' +
+    '                </div>\n' +
+    '            </div>\n' +
+    '            <div class="col-xs-6">\n' +
+    '                <label for="inputDepositAmount2" class="">Deposit 2</label>\n' +
+    '                <input ng-model="deposit.amount2" name="amount2" type="number" id="inputDepositAmount2" class="form-control"\n' +
+    '                       placeholder="0.15"\n' +
+    '                       autofocus=""\n' +
+    '                       autocomplete="off"\n' +
+    '                       required="" />\n' +
     '\n' +
-    '  <h3>Verify Account</h3>\n' +
-    '\n' +
-    '  <div class="row">\n' +
-    '    <p class="col-xs-12" style="margin-top: 15px; margin-bottom: 15px;">Please check your account for two deposits from <label class="label label-info">{{ exchange.depositId }}</label> and input them below.</p>\n' +
-    '    <div class="col-xs-6">\n' +
-    '      <label for="inputDepositAmount1" class="">Deposit 1</label>\n' +
-    '      <input ng-model="deposit.amount1" type="text" id="inputDepositAmount1" class="form-control" placeholder="0.35" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '    <div class="col-xs-6">\n' +
-    '      <label for="inputDepositAmount2" class="">Deposit 2</label>\n' +
-    '      <input ng-model="deposit.amount2" type="text" id="inputDepositAmount2" class="form-control" placeholder="0.15" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '  </div>\n' +
-    '\n' +
-    '  <div class="row" style="margin-top: 15px;">\n' +
-    '    <div class="col-xs-12 text-right">\n' +
-    '      <button ng-click="verifyAccount()" class="btn btn-warning">Verify</button>\n' +
-    '    </div>\n' +
-    '  </div>\n' +
-    '\n' +
-    '  <hr />\n' +
-    '\n' +
+    '                <div ng-show="verifyForm.$submitted || verifyForm.amount2.$touched">\n' +
+    '                    <div ng-show="verifyForm.amount2.$error.required">Required.</div>\n' +
+    '                    <div ng-show="verifyForm.amount2.$error.number">This is not a valid number.</div>\n' +
+    '                </div>\n' +
+    '            </div>\n' +
+    '        </div>\n' +
+    '        <div class="row" style="margin-top: 15px;">\n' +
+    '            <div class="col-xs-12 text-right">\n' +
+    '                <button type="submit"\n' +
+    '                        ng-disabled="verifyForm.$invalid"\n' +
+    '                        ng-click="verifyAccount()"\n' +
+    '                        class="btn btn-warning">Verify</button>\n' +
+    '            </div>\n' +
+    '        </div>\n' +
+    '    </form>\n' +
+    '    <hr />\n' +
     '</div>\n' +
     '\n' +
     '<div class="exchange-edit-bank-account row">\n' +
     '\n' +
     '  <div class="col-xs-12">\n' +
     '\n' +
-    '    <form ng-submit="saveBankAccount()" class="form">\n' +
+    '    <form ng-submit="saveBankAccount()" class="form" name="form" novalidate>\n' +
     '\n' +
     '      <div class="form-group">\n' +
     '        <label for="inputBankAccountDescription" class="">Description</label>\n' +
-    '        <input ng-model="bankAccount.description"\n' +
+    '        <input ng-model="bankAccount.description" name="description"\n' +
     '            type="text" id="inputBankAccountDescription"\n' +
-    '            class="form-control" autocomplete="off">\n' +
+    '            class="form-control" autocomplete="off" required="" />\n' +
+    '\n' +
+    '        <div ng-show="form.$submitted || form.description.$touched">\n' +
+    '            <div ng-show="form.description.$error.required">Required.</div>\n' +
+    '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <table class="bank-account-info table table-bordered">\n' +
@@ -7328,7 +7371,7 @@ module.run(['$templateCache', function($templateCache) {
     '          <td>Primary Account</td>\n' +
     '          <td>\n' +
     '            <input ng-model="bankAccount.primary"\n' +
-    '            type="checkbox" id="inputIsPrimary">\n' +
+    '            type="checkbox" id="inputIsPrimary" />\n' +
     '          </td>\n' +
     '        </tr>\n' +
     '        <tr>\n' +
@@ -7348,9 +7391,9 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '      <div class="next-cancel row text-right">\n' +
     '        <div class="col-xs-12">\n' +
-    '            <button type="button" ng-if="bankAccount.status !== \'Pending\'" ng-click="deleteBankAccount()" class="btn btn-lg btn-danger pull-left">Delete</button>\n' +
+    '            <button type="button" ng-disabled="form.$invalid" ng-if="bankAccount.status !== \'Pending\'" ng-click="deleteBankAccount()" class="btn btn-lg btn-danger pull-left">Delete</button>\n' +
     '            <button type="button" ui-sref="exchange" class="btn btn-lg btn-link">Cancel</button>\n' +
-    '            <button type="submit" class="btn btn-lg btn-success">Save</button>\n' +
+    '            <button type="submit" ng-disabled="form.$invalid" class="btn btn-lg btn-success">Save</button>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '    </form>\n' +

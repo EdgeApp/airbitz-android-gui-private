@@ -107,11 +107,10 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     ((NavigationActivity) getActivity()).popFragment();
                 }
             });
-            return false;
         } else {
             mFramework.back();
-            return true;
         }
+        return true;
     }
 
     private UiHandler handler = new UiHandler() {

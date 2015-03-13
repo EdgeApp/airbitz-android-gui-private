@@ -1016,11 +1016,11 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                 }
             } else {
                 if (mActivity != null) {
+                    mActivity.popFragment(); // Success fragment
                     saveInvalidEntryCount(0);
                     AudioPlayer.play(mActivity, R.raw.bitcoin_sent);
                     if (null != exitHandler) {
-                        mActivity.popFragment();
-                        mActivity.popFragment();
+                        mActivity.popFragment(); // Send Confirmation Fragment
                         exitHandler.success(txResult.getTxId());
                     } else {
                         mActivity.onSentFunds(mFromWallet.getUUID(), txResult.getTxId());
