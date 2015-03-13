@@ -249,6 +249,12 @@ public class PluginFramework {
         }
 
         @JavascriptInterface
+        public void clearData() {
+            Log.d(TAG, "clearData");
+            api.pluginDataClear(plugin.pluginId);
+        }
+
+        @JavascriptInterface
         public String readData(String key) {
             String s =  api.pluginDataGet(plugin.pluginId, key);
             Log.d(TAG, "readData: " + key + ": " + s);

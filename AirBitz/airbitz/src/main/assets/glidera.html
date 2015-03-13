@@ -124,6 +124,46 @@ body .list-group a.list-group-item:visited {
 body .label.label-outline {
   border: 1px solid white;
 }
+body .label.status {
+  font-size: 10px;
+  position: absolute;
+  right: -1px;
+  bottom: -6px;
+  border-color: #64a6cb;
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+body .exchange-ticker {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 5px 0;
+  position: relative;
+  top: -10px;
+  width: 100%;
+  left: 15px;
+  border-radius: 5px;
+}
+body .exchange-limits h4 {
+  margin-top: 0px;
+  color: #5a7991;
+}
+body .exchange-limits .buy-limits {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 5px;
+}
+body .exchange-limits .buy-limits .limit-data {
+  color: #80c342;
+}
+body .exchange-limits .sell-limits {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 5px;
+}
+body .exchange-limits .sell-limits .limit-data {
+  color: #2291cf;
+}
 body .exchange-options {
   margin: 40px 0;
 }
@@ -139,7 +179,7 @@ body .exchange-email-edit {
 }
 body .buy-sell {
   margin-top: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 body .buy-sell .btn-group .btn.active {
   background: none;
@@ -150,7 +190,7 @@ body .exchange-balances {
   margin-bottom: 20px;
 }
 body .exchange-user-account {
-  margin-top: 20px;
+  margin-top: 30px;
   margin-bottom: 20px;
 }
 body .exchange-user-account .list-group-item small {
@@ -242,7 +282,7 @@ body .twofa input[type=number].large {
   color: #0f5791;
 }
 body .transactions .table thead {
-  background: #446275;
+  background: #5a7991;
   color: white;
 }
 body .transactions .table td {
@@ -364,6 +404,10 @@ _bridge = function() {
       _native.writeData(key, data);
     },
 
+    clearData: function() {
+      _native.clearData();
+    },
+
     readData: function(key) {
       return _native.readData(key);
     },
@@ -445,6 +489,10 @@ _bridge = function() {
 
   Airbitz.core.writeData = function(key, data) {
     Airbitz._bridge.writeData(key, JSON.stringify(data));
+  };
+
+  Airbitz.core.clearData = function() {
+    Airbitz._bridge.clearData();
   };
 
   Airbitz.core.readData = function(key) {
@@ -6471,12 +6519,6 @@ angular.module('app.glidera', ['glidera'])
       g.key = account.key;
       g.secret = account.secret;
     }
-    g.key = 'a529206dd98607f7';
-    g.secret = '624e62cf29d139ef49b9b2e2e036b00e';
-    console.log('--------');
-    console.log(g.key);
-    console.log(g.secret);
-    console.log('--------');
     return g;
 }]);
 
@@ -6570,6 +6612,11 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     $scope.sell = function(){
       DataFactory.getOrder(true);
       $state.go('exchangeOrder', {'orderAction': 'sell'});
+    };
+
+    $scope.showOptions = false;
+    $scope.showAccountOptions = function() {
+      $scope.showOptions = !$scope.showOptions;
     };
 
     $scope.addBankAccount = function(){
@@ -6967,6 +7014,48 @@ angular.module('app.user', ['app.dataFactory', 'app.constants'])
       }, Error.reject);
     };
   }])
+.controller('apiKeyController', ['$scope', '$state', 'glideraFactory', 'UserFactory',
+  function ($scope, $state, glideraFactory, UserFactory) {
+    Airbitz.ui.title('Glidera API Keys');
+    $scope.account = UserFactory.getUserAccount();
+
+    $scope.cancel = function(){
+      if (UserFactory.isRegistered()) {
+        $state.go('exchange');
+      } else {
+        $state.go('signup');
+      }
+    };
+
+    $scope.deleteAccount = function(form) {
+      // Empty account
+      $scope.account = {};
+      UserFactory.clearUser();
+      // Clear api
+      glideraFactory.key = '';
+      glideraFactory.secret = '';
+      // Clear all storage
+      Airbitz.core.clearData();
+      $state.go('signup');
+
+      Airbitz.ui.showAlert('Acctoun Removed', 'Your account has been removed. Please register a new account or enter your access keys from Glidera.');
+    };
+
+    $scope.submit = function(form) {
+      Airbitz.ui.title('Saving...');
+      Airbitz.core.clearData();
+      glideraFactory.key = $scope.account.key;
+      glideraFactory.secret = $scope.account.secret;
+      UserFactory.getFullUserAccount().then(function() {
+        Airbitz.core.writeData('account', $scope.account);
+        $state.go("exchange");
+      }, function() {
+        Airbitz.ui.showAlert('Authentication Error', 'Unable to connect to API with new api keys');
+        glideraFactory.key = '';
+        glideraFactory.secret = '';
+      });
+    };
+  }])
 .controller('signupController', ['$scope', '$state', 'Error', 'States', 'UserFactory',
   function ($scope, $state, Error, States, UserFactory) {
     Airbitz.ui.title('Glidera Signup');
@@ -7154,6 +7243,12 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
       url: "/signup/",
       templateUrl: "app/user/partials/signup.html",
       controller: "signupController",
+    })
+    // route for signup
+    .state("apiKeys", {
+      url: "/keys/",
+      templateUrl: "app/user/partials/apikeys.html",
+      controller: "apiKeyController",
     })
     // route for email verification
     .state("verifyEmail", {
@@ -7360,13 +7455,13 @@ module.run(['$templateCache', function($templateCache) {
     '               name="description"\n' +
     '               type="text"\n' +
     '               id="inputBankAccountDescription"\n' +
-    '               class="form-control" \n' +
+    '               class="form-control"\n' +
     '               placeholder="My Checking"\n' +
     '               autofocus=""\n' +
     '               autocomplete="off"\n' +
     '               required="" />\n' +
-    '        <div ng-show="form.$submitted || form.description.$touched">\n' +
-    '            <div ng-show="form.description.$error.required">Required.</div>\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.description.$touched">\n' +
+    '            <div ng-show="form.description.$error.required" class="label label-danger">Required.</div>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7380,8 +7475,8 @@ module.run(['$templateCache', function($templateCache) {
     '          <option value="SAVINGS">Savings</option>\n' +
     '        </select>\n' +
     '\n' +
-    '        <div ng-show="form.$submitted || form.description.$touched">\n' +
-    '            <div ng-show="form.bankAccountType.$error.required">Required.</div>\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.description.$touched">\n' +
+    '            <div ng-show="form.bankAccountType.$error.required" class="label label-danger">Required.</div>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7394,10 +7489,10 @@ module.run(['$templateCache', function($templateCache) {
     '               class="form-control"\n' +
     '               placeholder="123456789"\n' +
     '               autofocus=""\n' +
-    '               autocomplete="off" \n' +
+    '               autocomplete="off"\n' +
     '               required="" />\n' +
-    '        <div ng-show="form.$submitted || form.accountNumber.$touched">\n' +
-    '            <div ng-show="form.accountNumber.$error.required">Required.</div>\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.accountNumber.$touched">\n' +
+    '            <div ng-show="form.accountNumber.$error.required" class="label label-danger">Required.</div>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7413,9 +7508,9 @@ module.run(['$templateCache', function($templateCache) {
     '               autocomplete="off"\n' +
     '               required=""\n' +
     '               routing-number-validator />\n' +
-    '        <div ng-show="form.$submitted || form.routingNumber.$touched">\n' +
-    '            <div ng-show="form.routingNumber.$error.required">Required.</div>\n' +
-    '            <div ng-show="form.routingNumber.$error.routingNumber">This is not a valid routing number.</div>\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.routingNumber.$touched">\n' +
+    '            <div ng-show="form.routingNumber.$error.required" class="label label-danger">Required.</div>\n' +
+    '            <div ng-show="form.routingNumber.$error.routingNumber" class="label label-danger">Valid routing number required</div>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7501,6 +7596,12 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/exchange/partials/exchange.html',
+    '<div class="exchange-ticker row">\n' +
+    '  <div class="text-right col-xs-12">\n' +
+    '    <div price-update price-type="{{ order.orderAction }}"></div>\n' +
+    '  </div>\n' +
+    '</div>\n' +
+    '\n' +
     '<div ng-if="userStatus.userCanTransact" class="buy-sell row">\n' +
     '  <div class="col-xs-6">\n' +
     '    <button ng-click="buy()" class="buy-button btn-success btn-lg btn-block btn"><i class="fa fa-bitcoin"></i> BUY</button>\n' +
@@ -7515,7 +7616,7 @@ module.run(['$templateCache', function($templateCache) {
     '<div account-summary></div>\n' +
     '\n' +
     '\n' +
-    '<div ng-if="userStatus.userCanTransact" class="exchange-payment-list row">\n' +
+    '<!-- <div ng-if="userStatus.userCanTransact" class="exchange-payment-list row">\n' +
     '  <div class="col-xs-12">\n' +
     '    <ul class="exchange-payment-options list-group" ng-model="bankAccounts">\n' +
     '      <li class="list-group-item header"><i class="fa fa-bank"></i>Payment Methods <button ng-if="bankAccounts.length == 0" ng-click="addBankAccount()" class="btn btn-primary btn-xs pull-right">ADD NEW</button></li>\n' +
@@ -7534,13 +7635,20 @@ module.run(['$templateCache', function($templateCache) {
     '      </li>\n' +
     '    </ul>\n' +
     '  </div>\n' +
-    '</div>\n' +
+    '</div> -->\n' +
     '\n' +
     '<div class="row">\n' +
     '  <div class="col-xs-12">\n' +
-    '    <button ui-sref="exchangeTransactions" class="btn btn-lg btn-block btn-default">Transactions</button>\n' +
+    '    <button type="button" ui-sref="exchangeTransactions" class="btn btn-lg btn-block btn-info">Transactions</button>\n' +
     '  </div>\n' +
     '</div>\n' +
+    '\n' +
+    '<div class="row" style="margin-top: 10px;">\n' +
+    '  <div class="col-xs-12">\n' +
+    '    <button type="button" ui-sref="apiKeys" class="btn btn-lg btn-block btn-default">Keys</button>\n' +
+    '  </div>\n' +
+    '</div>\n' +
+    '\n' +
     '');
 }]);
 })();
@@ -7598,8 +7706,8 @@ module.run(['$templateCache', function($templateCache) {
     '  </div>\n' +
     '\n' +
     '  <div class="text-right col-xs-6">\n' +
-    '      <div price-update price-type="{{ order.orderAction }}"></div>\n' +
-    '      <div price-expires price-type="{{ order.orderAction }}"></div>\n' +
+    '    <div price-update price-type="{{ order.orderAction }}"></div>\n' +
+    '    <div price-expires price-type="{{ order.orderAction }}"></div>\n' +
     '  </div>\n' +
     '</div>\n' +
     '\n' +
@@ -7885,30 +7993,31 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/limits/partials/limits.html',
-    '<div class="row">\n' +
-    '  <div class="col-xs-12">\n' +
-    '    <table class="table table-bordered">\n' +
-    '      <thead>\n' +
-    '        <th>Limits</th>\n' +
-    '        <th>Daily</th>\n' +
-    '        <th>Monthly</th>\n' +
-    '      </thead>\n' +
-    '      <tbody>\n' +
-    '        <tr>\n' +
-    '          <td>Buy</td>\n' +
-    '          <td>{{ limits.dailyBuyRemaining | currency:"$"}}</td>\n' +
-    '          <td>{{ limits.monthlyBuyRemaining | currency:"$"}}</td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
-    '          <td>Sell</td>\n' +
-    '          <td>{{ limits.dailySellRemaining | currency:"$"}}</td>\n' +
-    '          <td>{{ limits.monthlySellRemaining | currency:"$"}}</td>\n' +
-    '        </tr>\n' +
-    '      </tbody>\n' +
-    '    </table>\n' +
+    '<div class="text-center exchange-limits row">\n' +
+    '  <div class="col-xs-6">\n' +
+    '    <div class="buy-limits">\n' +
+    '      <h4>Buy Limits</h4>\n' +
+    '      <div class="limit-daily-buy">\n' +
+    '        <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailyBuyRemaining | currency:"$"}}</span>\n' +
+    '      </div>\n' +
+    '      <div class="limit-daily-buy">\n' +
+    '        <span class="limit-label">Monthly: </span><span class="limit-data">{{ limits.monthlyBuyRemaining | currency:"$"}}</span>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
     '  </div>\n' +
-    '</div>\n' +
-    '');
+    '\n' +
+    '  <div class="col-xs-6">\n' +
+    '    <div class="sell-limits">\n' +
+    '      <h4>Sell Limits</h4>\n' +
+    '        <div class="limit-daily-buy">\n' +
+    '          <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailySellRemaining | currency:"$"}}</span>\n' +
+    '        </div>\n' +
+    '        <div class="limit-daily-buy">\n' +
+    '          <span class="limit-label">Monthly: </span><span class="limit-data">{{ limits.monthlySellRemaining | currency:"$"}}</span>\n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '  </div>\n' +
+    '</div>');
 }]);
 })();
 
@@ -7970,27 +8079,84 @@ module.run(['$templateCache', function($templateCache) {
     '<div class="exchange-user-account row">\n' +
     '  <div class="col-xs-12">\n' +
     '    <ul class="list-group">\n' +
-    '      <li class="header list-group-item"><i class="fa fa-user"></i> {{ account.firstName || \'\' }} {{ account.lastName || \'\' }}\n' +
+    '      <li ng-click="showAccountOptions()"class="header list-group-item"><i class="fa fa-user"></i> {{ account.firstName || \'\' }} {{ account.lastName || \'\' }}\n' +
     '        <label\n' +
-    '          class="label label-primary pull-right">\n' +
+    '          class="status label label-primary pull-right">\n' +
     '          {{ userStatus.userCanTransact | statusFilter }}\n' +
     '        </label>\n' +
     '      </li>\n' +
-    '      <li class="list-group-item">Email\n' +
-    '        <label class="label label-outline pull-right">{{ userStatus.userEmailIsSetup | statusFilter }}</label>\n' +
+    '      <li ng-show="showOptions" class="list-group-item">Email\n' +
+    '        <label class="status label label-outline pull-right">{{ userStatus.userEmailIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
-    '      <li ui-sref="verifyPhone" class="list-group-item">Mobile Phone\n' +
-    '        <label class="label label-outline pull-right">{{ userStatus.userPhoneIsSetup | statusFilter }}</label>\n' +
+    '      <li ng-show="showOptions" ui-sref="verifyPhone" class="list-group-item">Mobile Phone\n' +
+    '        <label class="status label label-outline pull-right">{{ userStatus.userPhoneIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
-    '      <li ui-sref="account" class="list-group-item">Account Info\n' +
-    '        <label class="label label-outline pull-right">{{ userStatus.userBasicInfoIsSetup | statusFilter }}</label>\n' +
+    '      <li ng-show="showOptions" ui-sref="account" class="list-group-item">Account Info\n' +
+    '        <label class="status label label-outline pull-right">{{ userStatus.userBasicInfoIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
-    '      <li ng-click="routeBankAccount()" class="list-group-item">Bank Account\n' +
-    '        <label class="label label-outline pull-right">{{ userStatus.userBankAccountIsSetup | statusFilter }}</label>\n' +
+    '      <li ng-show="showOptions" ng-click="routeBankAccount()" class="list-group-item">Bank Account\n' +
+    '        <label class="status label label-outline pull-right">{{ userStatus.userBankAccountIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
     '    </ul>\n' +
     '  </div>\n' +
     '</div>');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/user/partials/apikeys.html',
+    '\n' +
+    '<div class="row" style="margin-top: 20px;" >\n' +
+    '  <form name="form" class="exchange-sign-up col-xs-12" novalidate>\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="key" class="">Name</label>\n' +
+    '      <input ng-model="account.key" name="key" type="text" id="key" class="form-control" \n' +
+    '             placeholder="Glidera Key"\n' +
+    '             autofocus="true"\n' +
+    '             autocomplete="off"\n' +
+    '             required="" />\n' +
+    '      <div ng-show="form.$submitted || form.key.$touched">\n' +
+    '        <div ng-show="form.key.$error.required">Required.</div>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="secret" class="sr-only">Last</label>\n' +
+    '      <input ng-model="account.secret" name="secret" type="text" id="secret" class="form-control" \n' +
+    '             placeholder="Glidera Secret" \n' +
+    '             autofocus=""\n' +
+    '             autocomplete="off"\n' +
+    '             required="" />\n' +
+    '      <div ng-show="form.$submitted || form.secret.$touched">\n' +
+    '        <div ng-show="form.secret.$error.required">Required.</div>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="row text-right" style="margin-top: 40px;">\n' +
+    '      <div class="col-xs-12">\n' +
+    '        <button type="button" \n' +
+    '                ng-click="deleteAccount()" \n' +
+    '                class="btn btn-lg btn-danger pull-left">Remove Account</button>\n' +
+    '        <button type="button" \n' +
+    '                ng-click="cancel()" \n' +
+    '                class="btn btn-lg btn-link">Cancel</button>\n' +
+    '        <button type="submit"\n' +
+    '                ng-disabled="form.$invalid" \n' +
+    '                ng-click="submit()" \n' +
+    '                class="btn btn-lg btn-success">Authenticate</button>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '  </form>\n' +
+    '</div>\n' +
+    '');
 }]);
 })();
 
@@ -8052,6 +8218,12 @@ module.run(['$templateCache', function($templateCache) {
     '                ng-disabled="form.$invalid" \n' +
     '                ng-click="submitSignUp()" \n' +
     '                class="btn btn-lg btn-success">Next</button>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="row text-right" style="margin-top: 40px;">\n' +
+    '      <div class="col-xs-12">\n' +
+    '        <button type="button" ui-sref="apiKeys" class="btn btn-sm btn-link">Keys</button>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
@@ -8167,7 +8339,6 @@ module.run(['$templateCache', function($templateCache) {
     '        <button type="submit" class="btn btn-lg btn-success">Save</button>\n' +
     '      </div>\n' +
     '    </div>\n' +
-    '\n' +
     '  </form>\n' +
     '</div>\n' +
     '');
@@ -8288,6 +8459,10 @@ factory('UserFactory', [
     };
     factory.getUserAccount = function() {
       return account;
+    };
+    factory.clearUser = function() {
+      account = {};
+      Airbitz.core.writeData('account', {});
     };
     factory.registerUser = function(firstName, lastName, email) {
       var d = $q.defer();
