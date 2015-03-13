@@ -1020,7 +1020,6 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                     saveInvalidEntryCount(0);
                     AudioPlayer.play(mActivity, R.raw.bitcoin_sent);
                     if (null != exitHandler) {
-                        mActivity.popFragment(); // Send Confirmation Fragment
                         exitHandler.success(txResult.getTxId());
                     } else {
                         mActivity.onSentFunds(mFromWallet.getUUID(), txResult.getTxId());
