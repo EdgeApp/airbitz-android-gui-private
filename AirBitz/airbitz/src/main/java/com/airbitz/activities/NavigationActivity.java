@@ -1863,12 +1863,11 @@ public class NavigationActivity extends Activity
         mDrawerBuySell.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mDrawer.closeDrawer(mDrawerView);
-                switchFragmentThread(Tabs.MORE.ordinal());
                 mNavStacks[Tabs.MORE.ordinal()].clear();
 
-                Fragment fragment = new PluginFragment();
-                pushFragment(fragment, NavigationActivity.Tabs.MORE.ordinal());
+                pushFragment(new PluginFragment(), NavigationActivity.Tabs.MORE.ordinal());
+                switchFragmentThread(Tabs.MORE.ordinal());
+                mDrawer.closeDrawer(mDrawerView);
             }
         });
 
@@ -1884,8 +1883,10 @@ public class NavigationActivity extends Activity
         mDrawerSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mDrawer.closeDrawer(mDrawerView);
+                mNavStacks[Tabs.MORE.ordinal()].clear();
+                pushFragment(new SettingFragment(), NavigationActivity.Tabs.MORE.ordinal());
                 switchFragmentThread(Tabs.MORE.ordinal());
+                mDrawer.closeDrawer(mDrawerView);
             }
         });
 
