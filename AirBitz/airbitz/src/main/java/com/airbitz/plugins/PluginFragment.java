@@ -181,7 +181,9 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         public void exit() {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    ((NavigationActivity) getActivity()).onBackPressed();
+                    if (getActivity() != null) {
+                        ((NavigationActivity) getActivity()).onBackPressed();
+                    }
                 }
             });
         }

@@ -259,6 +259,26 @@ body .live-price-expiration .expiration-data {
   font-weight: bold;
   color: #64a6cb;
 }
+body .verify-phone-info {
+  margin-bottom: 20px;
+  text-align: center;
+}
+body .verify-phone-form input[name="phone"] {
+  text-align: center;
+}
+body .error-message-console {
+  height: 20px;
+  text-align: center;
+  color: #ff7777;
+}
+body .error-screen {
+  margin-top: 20px;
+}
+body .input-error {
+  position: absolute;
+  right: 14px;
+  margin-top: -11px;
+}
 
 </style>
 
@@ -6018,32 +6038,10 @@ d[5]);return b},e:function(a,b,c){a===s&&(a={});if(b===s)return a;for(var d in b
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.ca,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===s?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
 
-var module = {};
-var glideraInterface = angular.module('glidera', []);
-glideraInterface.factory('glideraApi', ['$http', function($http) {
-  Glidera.request = function(opts, callback) {
-    return $http(opts).success(function(data, status, header, config) {
-      callback(null, status, data);
-    }).error(function(data, status, header, config) {
-      callback(null, status, data);
-    });
-  };
-  Glidera.hmacsha256 = function(message, secret) {
-    var hmac = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(secret), sjcl.hash.sha256);
-    return sjcl.codec.hex.fromBits(hmac.encrypt(message));
-  };
-  Glidera.jsonParse = JSON.parse;
-  Glidera.prepareData = function(req, opts, json) {
-    req.data = opts.data;
-  };
-  return Glidera;
-}]);
-
-
 var Glidera = (function () {
   'use strict';
 
-  var Glidera = module.exports = function(o) {
+  var Glidera = function(o) {
     o = o || {};
     if (!o.partnerAccessKey) {
       Glidera.error('Missing partnerAccessKey');
@@ -6094,6 +6092,7 @@ var Glidera = (function () {
     },
 
     register: function(firstName, lastName, email, code, cb) {
+      var that = this;
       this._request(false, '/user/register', {
         'method': 'POST',
         'data': {
@@ -6103,9 +6102,8 @@ var Glidera = (function () {
         },
         'callback': function(error, statusCode, body) {
           if (statusCode == 200) {
-            var j = Glidera.jsonParse(body);
-            this.key = j['key'];
-            this.secret = j['secret'];
+            that.key = body.key;
+            that.secret = body.secret;
           }
           cb(statusCode == 200, body);
         }
@@ -6113,7 +6111,7 @@ var Glidera = (function () {
     },
 
     hasRegistered: function() {
-      return (this.key !== '' && this.secret !== '');
+      return this.key && this.secret ? true : false;
     },
 
     getBasicInfo: function(callback) {
@@ -6185,13 +6183,11 @@ var Glidera = (function () {
       });
     },
 
-    verifyBankAccount: function(accountId, amount1, amount2, description, callback) {
+    verifyBankAccount: function(accountId, amount1, callback) {
       return this._request(true, '/user/bankaccount/' + accountId + '/verify', {
           'method': 'POST',
           'data': {
-            'depositAmount1': amount1,
-            'depositAmount2': amount2,
-            'description': description
+            'depositAmount1': amount1
           },
           'callback': callback
       });
@@ -6331,25 +6327,59 @@ var Glidera = (function () {
 
 })();
 
+
+(function() {
+  angular.module('glidera', [])
+    .factory('glideraApi', ['$http', glideraService]);
+
+  function glideraService($http) {
+    Glidera.request = function(opts, callback) {
+      return $http(opts).success(function(data, status, header, config) {
+        callback(null, status, data);
+      }).error(function(data, status, header, config) {
+        callback(null, status, data);
+      });
+    };
+    Glidera.hmacsha256 = function(message, secret) {
+      var hmac = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(secret), sjcl.hash.sha256);
+      return sjcl.codec.hex.fromBits(hmac.encrypt(message));
+    };
+    Glidera.jsonParse = JSON.parse;
+    Glidera.prepareData = function(req, opts, json) {
+      req.data = opts.data;
+    };
+
+    return Glidera;
+  }
+})();
+
 </script>
 
   <script type="text/javascript">
+(function() {
+  'use strict';
 
-angular.module('app.2fa', ['app.dataFactory', 'app.glidera']).
-controller('verify2faController', ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
+  angular.module('app.2fa', ['app.dataFactory', 'app.glidera'])
+    .controller('verify2faController',
+      ['$scope','$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor', otpController])
+    .factory('TwoFactor',
+      ['$state', '$q', 'glideraFactory', otpFactory]);
+
+  function otpController($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
     Airbitz.ui.title('2 Factor Verification');
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
     $scope.hasNumber = false;
 
     var requestCode = function() {
-      TwoFactor.requestCode().then(function(hasNumber) {
-        if ($stateParams.confirmNumber == 'confirm') {
-          $scope.hasNumber = hasNumber;
+      UserFactory.fetchUserAccountStatus().then(function(userStatus) {
+        if ($stateParams.confirmNumber == 'confirm' && userStatus.userPhoneIsSetup) {
+          $scope.hasNumber = true;
         }
-      }, function(error) {
-        Airbitz.ui.showAlert('Error', error);
+        TwoFactor.requestCode().then(function() { }, function(error) {
+          $state.go('exchange');
+          Airbitz.ui.showAlert('Error', 'Unable to request 2fa token. Please retry again later.');
+        });
       });
     };
     $scope.submit2FA = function() {
@@ -6359,73 +6389,62 @@ controller('verify2faController', ['$scope', '$state', '$stateParams', 'DataFact
       requestCode();
     };
     requestCode();
-  }]).
-factory('TwoFactor', ['$state', '$q', 'glideraFactory',
-  function($state, $q, glideraFactory) {
-    'use strict';
+  }
 
-    var code = '';
-    var oldCode = '';
-    var lastFetch = null;
-    var nextAction = function() { };
-    var factory = {};
-    var that = this;
-    factory.cached = function() {
-      if (!that.lastFetch || !that.code) {
-        return false;
-      }
-      // if the code is less than 2 minutes old, don't ask for 2fa
-      return ((new Date().getTime() - that.lastFetch.getTime()) / 1000.0) <= 2 * 60;
-    };
-    factory.confirmTwoFactor = function(finishedCallback) {
-      if (finishedCallback) {
-        that.nextAction = finishedCallback;
-      }
-      $state.go('verify2FA', {'confirmNumber': 'confirm'});
-    };
-    factory.showTwoFactor = function(finishedCallback) {
-      if (factory.cached())  {
-        finishedCallback(that.code);
-      } else {
+  function otpFactory($state, $q, glideraFactory) {
+      var code = '';
+      var oldCode = '';
+      var lastFetch = null;
+      var nextAction = function() { };
+      var factory = {};
+      var that = this;
+      factory.cached = function() {
+        if (!that.lastFetch || !that.code) {
+          return false;
+        }
+        // if the code is less than 2 minutes old, don't ask for 2fa
+        return ((new Date().getTime() - that.lastFetch.getTime()) / 1000.0) <= 2 * 60;
+      };
+      factory.confirmTwoFactor = function(finishedCallback) {
         if (finishedCallback) {
           that.nextAction = finishedCallback;
         }
-        $state.go('verify2FA', {'confirmNumber': ''});
-      }
-    };
-    factory.checkPhone = function() {
-      var deferred = $q.defer();
-      glideraFactory.getPhoneNumber(function(e, r, b) {
-        200 == r ? deferred.resolve(b) : deferred.reject(b);
-      });
-      return deferred.promise;
-    };
-    factory.requestCode = function() {
-      return factory.checkPhone().then(function(data) {
-        var hasNumber = data.phoneNumber !== null ? true : false;
+        $state.go('verify2FA', {'confirmNumber': 'confirm'});
+      };
+      factory.showTwoFactor = function(finishedCallback) {
+        if (factory.cached())  {
+          finishedCallback(that.code);
+        } else {
+          if (finishedCallback) {
+            that.nextAction = finishedCallback;
+          }
+          $state.go('verify2FA', {'confirmNumber': ''});
+        }
+      };
+      factory.requestCode = function() {
         var d = $q.defer();
         glideraFactory.getTwoFactorCode(function(e, r, b) {
           that.lastFetch = new Date();
-          r >= 200 && r < 300 ? d.resolve(hasNumber) : d.reject(b);
+          r >= 200 && r < 300 ? d.resolve(b) : d.reject(b);
         });
         return d.promise;
-      });
-    };
-    factory.finish = function(c, o) {
-      that.code = c;
-      that.oldCode = o;
-      if (that.nextAction) {
-        that.nextAction();
+      };
+      factory.finish = function(c, o) {
+        that.code = c;
+        that.oldCode = o;
+        if (that.nextAction) {
+          that.nextAction();
+        }
+      };
+      factory.getCode = function() {
+        return that.code;
+      };
+      factory.getOldCode = function() {
+        return that.oldCode;
       }
+      return factory;
     };
-    factory.getCode = function() {
-      return that.code;
-    };
-    factory.getOldCode = function() {
-      return that.oldCode;
-    }
-    return factory;
-  }]);
+})();
 
 </script>
   <script type="text/javascript">
@@ -6434,6 +6453,7 @@ var app = angular.module('app.core', [
   'ui.router',
   'ngAnimate',
   'app.filters',
+  'app.error',
   ]);
 
 </script>
@@ -6443,16 +6463,16 @@ angular.module('app.glidera', ['glidera'])
 .factory('glideraFactory', ['glideraApi', function(glideraApi) {
     var g = new Glidera({
       'sandbox': true,
-      'partnerAccessKey': 'ad75fb75b8877f30',
-      // 'key': 'a529206dd98607f7',
-      // 'secret': '624e62cf29d139ef49b9b2e2e036b00e'
+      'partnerAccessKey': 'ad75fb75b8877f30'
     });
-    g.sandboxAddress = 'mk5TSrpQiZEgU5ST4Ly8v1J1YKQFVkCYEy';
+    // g.sandboxAddress = 'mk5TSrpQiZEgU5ST4Ly8v1J1YKQFVkCYEy';
     var account = Airbitz.core.readData('account') || {};
     if (account) {
-      // g.key = account.key;
-      // g.secret = account.secret;
+      g.key = account.key;
+      g.secret = account.secret;
     }
+    g.key = 'a529206dd98607f7';
+    g.secret = '624e62cf29d139ef49b9b2e2e036b00e';
     console.log('--------');
     console.log(g.key);
     console.log(g.secret);
@@ -6462,31 +6482,43 @@ angular.module('app.glidera', ['glidera'])
 
 </script>
   <script type="text/javascript">
+(function() {
+  'use strict';
 
-angular.module('app.history', []).
-run(function($rootScope, $window) {
-  var history = [];
-  $rootScope.$on('$locationChangeStart', function(event, next, current) {
-    console.log('history: ' + next + ' ' + current);
-    if (history.length == 0) {
-      history.push(current);
-    }
-    // if we are on the dashboard screen, empty history
-    if (next.match(/\.html#\/exchange\/$/)
-      || next.match(/\.html#\/signup\/$/)) {
-      history.length = 0;
-    }
-    history.push(next);
-  });
-  Airbitz._bridge.back = function() {
-    var el = history.pop();
-    if (history.length == 0) {
-      Airbitz._bridge.exit();
-    } else {
-      $window.history.back();
-    }
+  angular
+    .module('app.history', ['app.dataFactory'])
+    .run(['$rootScope', '$window', '$location', 'UserFactory', history]);
+
+  /* TODO: remove match(//) regexp and replace with state lookups */
+  function history($rootScope, $window, $location, UserFactory) {
+    var history = [];
+    $rootScope.$on('$locationChangeStart', function(event, next, current) {
+      if (!UserFactory.isRegistered() && !next.match(/signup.html/)) {
+        console.log('Not registered. Redirecting to registration form.');
+        $location.path('/signup/');
+        return;
+      }
+      console.log('history: ' + next + ' ' + current);
+      if (history.length == 0) {
+        history.push(current);
+      }
+      // if we are on the dashboard screen, empty history
+      if (next.match(/\.html#\/exchange\/$/)
+        || next.match(/\.html#\/signup\/$/)) {
+        history.length = 0;
+      }
+      history.push(next);
+    });
+    Airbitz._bridge.back = function() {
+      var el = history.pop();
+      if (history.length == 0) {
+        Airbitz._bridge.exit();
+      } else {
+        $window.history.back();
+      }
+    };
   };
-});
+})();
 
 </script>
   <script type="text/javascript">
@@ -6497,11 +6529,15 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
   }])
-.controller('dashboardController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'Limits',
-  function ($scope, $state, DataFactory, UserFactory, Limits) {
+.controller('dashboardController', ['$scope', '$state', 'Error', 'DataFactory', 'UserFactory', 'Limits',
+  function ($scope, $state, Error, DataFactory, UserFactory, Limits) {
     Airbitz.ui.title('Glidera');
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
+    $scope.userStatus = UserFactory.getUserAccountStatus();
+    UserFactory.fetchUserAccountStatus().then(function(b) {
+      $scope.userStatus = b;
+    });
 
     $scope.limits = Limits.getLimits();
     Limits.fetchLimits().then(function(limits) {
@@ -6511,9 +6547,20 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     $scope.bankAccounts = DataFactory.getBankAccounts();
     DataFactory.fetchBankAccounts().then(function(bankAccounts) {
       $scope.bankAccounts = bankAccounts;
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
+    }, Error.reject);
+
+    $scope.routeBankAccount = function() {
+      if ($scope.bankAccounts.length) {
+        var bankAccount = $scope.bankAccounts[0]; // get first bank account if available
+        if(bankAccount.status == 'Pending') {
+          $state.go('exchangeVerifyBankAccount', {'uuid': bankAccount.bankAccountUuid});
+        } else {
+          $state.go('exchangeEditBankController', {'uuid': bankAccount.bankAccountUuid});
+        }
+      } else {
+        $state.go('exchangeAddBankAccount')
+      }
+    };
 
     $scope.buy = function(){
       DataFactory.getOrder(true);
@@ -6529,9 +6576,9 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
       $state.go('exchangeAddBankAccount');
     };
   }])
-.controller('addAccountController',
-  ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+.controller('addBankAccountController',
+  ['$scope', '$state', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, Error, DataFactory, UserFactory, TwoFactor) {
     Airbitz.ui.title('Add Bank Account');
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
@@ -6542,59 +6589,62 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
       TwoFactor.showTwoFactor(function() {
         DataFactory.createBankAccount($scope.bankAccount).then(function() {
           $state.go('exchange');
-        }, function() {
-          Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-        });
+        }, Error.reject);
       });
     };
   }])
+.controller('verifyBankAccountController',
+  ['$scope', '$state', '$stateParams', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, $stateParams, Error, DataFactory, UserFactory, TwoFactor) {
+    Airbitz.ui.title('Verify Bank Account');
+    $scope.account = UserFactory.getUserAccount();
+    $scope.bankAccount = DataFactory.getBankAccount($stateParams.uuid);
+
+    DataFactory.fetchBankAccount($stateParams.uuid).then(function(bankAccount) {
+        $scope.bankAccount = bankAccount;
+      }, Error.reject);
+
+    $scope.deposit = {};
+    $scope.verifyAccount = function() {
+      DataFactory.verifyBankAccount(
+        $scope.bankAccount.bankAccountUuid,
+        $scope.deposit.amount1
+      )
+      .then(function() {
+        $state.go('exchange');
+      }, Error.reject);
+    };
+  }])
 .controller('editBankAccountController',
-  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor) {
+  ['$scope', '$state', '$stateParams', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, $stateParams, Error, DataFactory, UserFactory, TwoFactor) {
     Airbitz.ui.title('Edit Bank Account');
     $scope.account = UserFactory.getUserAccount();
     $scope.bankAccount = DataFactory.getBankAccount($stateParams.uuid);
     DataFactory.fetchBankAccount($stateParams.uuid).then(function(bankAccount) {
       $scope.bankAccount = bankAccount;
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
-
-    $scope.deposit = {};
-    $scope.verifyAccount = function() {
-      DataFactory.verifyBankAccount(
-          $scope.bankAccount.bankAccountUuid, $scope.deposit.amount1,
-          $scope.deposit.amount2, $scope.bankAccount.description).then(function() {
-        $state.go('exchange');
-      }, function() {
-        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-      });
-    };
+    }, Error.reject);
 
     $scope.saveBankAccount = function() {
       DataFactory.updateBankAccount($scope.bankAccount).then(function() {
         Airbitz.ui.showAlert('Saved', 'Bank account information has been updated.');
         $state.go('exchange');
-      }, function() {
-        Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-      });
+      }, Error.reject);
     };
 
     $scope.deleteBankAccount = function() {
       TwoFactor.showTwoFactor(function() {
         DataFactory.deleteBankAccount($scope.bankAccount.bankAccountUuid).then(function() {
-          Airbitz.ui.showAlert('Bank Account Deleted', $scope.bankAccount + ' deleted');
+          Airbitz.ui.showAlert('Bank Account Deleted', $scope.bankAccount.description + ' deleted');
           $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
+        }, Error.reject);
       });
     };
   }])
 
 .controller('orderController',
-  ['$scope', '$state', '$stateParams', 'DataFactory', 'UserFactory', 'TwoFactor', 'Limits',
-  function ($scope, $state, $stateParams, DataFactory, UserFactory, TwoFactor, Limits) {
+  ['$scope', '$state', '$stateParams', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor', 'Limits',
+  function ($scope, $state, $stateParams, Error, DataFactory, UserFactory, TwoFactor, Limits) {
     Airbitz.ui.title('Place Order');
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
@@ -6611,16 +6661,12 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     DataFactory.fetchBankAccounts().then(function(bankAccounts) {
       $scope.bankAccounts = bankAccounts;
       $scope.order.transferFromBankAccount = bankAccounts[0];
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error! Error!');
-    });
+    }, Error.reject);
 
     DataFactory.getUserWallets().then(function(userWallets) {
       $scope.userWallets = userWallets;
       $scope.order.transferToWallet = userWallets[0]
-    }, function(error) {
-      $scope.error = 'Error: Cannot get user wallets.';
-    });
+    }, Error.reject);
 
 
     $scope.convertFiatValue = function(input) {
@@ -6659,8 +6705,8 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     };
   }])
 
-.controller('reviewOrderController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-  function ($scope, $state, DataFactory, UserFactory, TwoFactor) {
+.controller('reviewOrderController', ['$scope', '$state', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor',
+  function ($scope, $state, Error, DataFactory, UserFactory, TwoFactor) {
     var order = DataFactory.getOrder(false);
     console.log(JSON.stringify(order));
     $scope.order = order;
@@ -6678,16 +6724,12 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
         DataFactory.buy(order.transferToWallet, order.orderBtcInput).then(function() {
           Airbitz.ui.showAlert('Bought Bitcoin', 'You bought bitcoin!');
           $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
+        }, Error.reject);
       } else {
         DataFactory.sell(order.transferToWallet, order.orderBtcInput).then(function() {
           Airbitz.ui.showAlert('Sold Bitcoin', 'You sold bitcoin!');
           $state.go('exchange');
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', error);
-        });
+        }, Error.reject);
       }
     };
   }])
@@ -6708,20 +6750,31 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
       $scope.transactions = transactions;
     })
 
-  }]);
-
-
-
-
-
-
-
-
-
-
-
-
-
+  }]).
+directive('accountSummary', [function() {
+  return {
+    templateUrl: 'app/user/partials/account.html'
+  };
+}]).
+directive('routingNumberValidator', [function() {
+  return {
+    require: 'ngModel',
+    link: function(scope, elm, attrs, ctrl) {
+      ctrl.$validators.routingNumber = function(mv) {
+        if (!mv || !mv.toString().match(/^\d{9}$/)) {
+          return false;
+        }
+        var s = mv.toString().split('').map(function(i) {
+          return parseInt(i);
+        });
+        checksum = (7 * (s[0] + s[3] + s[6]) +
+                    3 * (s[1] + s[4] + s[7]) +
+                    9 * (s[2] + s[5])) % 10;
+        return s[8] == checksum;
+      }
+    }
+  };
+}]);
 
 </script>
   <script type="text/javascript">
@@ -6894,16 +6947,13 @@ directive('priceExpires', ['$interval', '$filter', 'Prices',
   <script type="text/javascript">
 
 angular.module('app.user', ['app.dataFactory', 'app.constants'])
-.controller('userAccountController', ['$scope', '$state', 'DataFactory', 'States', 'UserFactory',
-  function ($scope, $state, DataFactory, States, UserFactory) {
+.controller('userAccountController', ['$scope', '$state', 'Error', 'States', 'UserFactory',
+  function ($scope, $state, Error, States, UserFactory) {
     $scope.states = States.getStates();
     $scope.account = UserFactory.getUserAccount();
-    $scope.hasRegistered = UserFactory.isRegistered();
     UserFactory.getFullUserAccount().then(function(account) {
       $scope.account = account;
-    }, function() {
-      Airbitz.ui.showAlert('Error', 'TODO: Error. Error');
-    });
+    }, Error.reject);
 
     $scope.cancelSignup = function(){
       $state.go('exchange');
@@ -6914,13 +6964,11 @@ angular.module('app.user', ['app.dataFactory', 'app.constants'])
       UserFactory.updateUserAccount($scope.account).then(function() {
         Airbitz.ui.showAlert('Saved', 'User information has been updated.');
         $state.go('exchange');
-      }, function(error) {
-        Airbitz.ui.showAlert('Error', error);
-      });
+      }, Error.reject);
     };
   }])
-.controller('signupController', ['$scope', '$state', 'DataFactory', 'States', 'UserFactory',
-  function ($scope, $state, DataFactory, States, UserFactory) {
+.controller('signupController', ['$scope', '$state', 'Error', 'States', 'UserFactory',
+  function ($scope, $state, Error, States, UserFactory) {
     Airbitz.ui.title('Glidera Signup');
     $scope.account = UserFactory.getUserAccount();
 
@@ -6935,56 +6983,56 @@ angular.module('app.user', ['app.dataFactory', 'app.constants'])
       } else {
         UserFactory.registerUser($scope.account.firstName, $scope.account.lastName, $scope.account.email).then(function() {
           $state.go('verifyEmail');
-        }, function(error) {
-          if (error.message) {
-            Airbitz.ui.showAlert('Error', error.message);
-          } else {
-            // TODO: abstract the error messages
-            Airbitz.ui.showAlert('Error', 'An unknown error occurred.');
-          }
-        });
+        }, Error.reject);
       }
     };
   }])
-.controller('verifyEmailController', ['$scope', '$state', 'DataFactory', 'UserFactory',
-    function($scope, $state, DataFactory, UserFactory) {
+.controller('verifyEmailController', ['$scope', '$state', 'Error', 'UserFactory',
+    function($scope, $state, Error, UserFactory) {
       Airbitz.ui.title('Glidera: Verify Email');
-
-      $scope.exchange = DataFactory.getExchange();
       $scope.account = UserFactory.getUserAccount();
 
-      $scope.resendEmail = function(email){
-        Airbitz.ui.showAlert('Resending', 'Resending to ' + email);
-        // TODO resend email...
-      };
-      $scope.verifyEmail = function(){
-        Airbitz.ui.title('Saving...');
-        $state.go('verifyPhone');
+      $scope.next = function() {
+        UserFactory.fetchUserAccountStatus().then(function(userStatus) {
+          if (userStatus.userEmailIsSetup) {
+            $state.go('verifyInfo');
+          } else {
+            Airbitz.ui.showAlert('Verify Email', 'Please verify your email address before proceeding!');
+            $state.go('verifyEmail');
+          }
+        }, Error.reject);
       };
     }])
-.controller('verifyPhoneController', ['$scope', '$state', 'DataFactory', 'UserFactory', 'TwoFactor',
-    function($scope, $state, DataFactory, UserFactory, TwoFactor) {
-      Airbitz.ui.title('Glidera: Verify Phone');
+.controller('verifyInfoController', ['$scope', '$state', 'Error', 'States', 'UserFactory',
+  function($scope, $state, Error, States, UserFactory) {
+    $scope.states = States.getStates();
+    $scope.account = UserFactory.getUserAccount();
 
-      $scope.exchange = DataFactory.getExchange();
+    $scope.saveUserAccount = function() {
+      Airbitz.ui.title('Saving...');
+      UserFactory.updateUserAccount($scope.account).then(function() {
+        Airbitz.ui.showAlert('Saved', 'User information has been updated.');
+        $state.go('verifyPhone');
+      }, Error.reject);
+    };
+  }])
+.controller('verifyPhoneController', ['$scope', '$state', 'Error', 'DataFactory', 'UserFactory', 'TwoFactor',
+    function($scope, $state, Error, DataFactory, UserFactory, TwoFactor) {
+      Airbitz.ui.title('Glidera: Verify Phone');
       $scope.account = UserFactory.getUserAccount();
 
       var verifyCode = function() {
         DataFactory.confirmPhoneNumber(TwoFactor.getCode(), TwoFactor.getOldCode()).then(function() {
           $state.go('exchange');
-        }, function() {
-          Airbitz.ui.showAlert('Error', 'Invalid code. Please try again.');
-        });
+        }, Error.reject);
       };
       $scope.submitPhone = function(){
         DataFactory.addPhoneNumber($scope.account.phone).then(function() {
           TwoFactor.confirmTwoFactor(verifyCode);
-        }, function(error) {
-          Airbitz.ui.showAlert('Error', 'Unable to add phone number at this time.');
-        });
+        }, Error.reject);
       };
     }]).
-directive('phoneNumberValidator', function() {
+directive('phoneNumberValidator', [function() {
   var PHONE_REGEXP = /^[0-9]{3}-?[0-9]{3}-?[0-9]{4}$/i;
 
   return {
@@ -6995,10 +7043,6 @@ directive('phoneNumberValidator', function() {
       }
     }
   };
-}).directive('accountSummary', [function() {
-  return {
-    templateUrl: 'app/user/partials/account.html'
-  };
 }]);
 
 </script>
@@ -7006,15 +7050,7 @@ directive('phoneNumberValidator', function() {
 angular.module('app.filters', []).
 filter('statusFilter', function() {
   return function(status) {
-    switch(status) {
-      case 'BASIC_INFO_NOT_VERIFIED':
-      case 'BASIC_INFO_VERIFIED_BANK_ACCOUNT_NEEDED':
-        return 'Not Verified';
-      case 'BASIC_INFO_VERIFIED':
-        return 'Verified';
-      default:
-        return 'ACCOUNT UNKNOWN';
-    }
+    return (status) ? 'Verified' : 'Unverified';
   };
 }).
 filter('titlecase', function() {
@@ -7039,6 +7075,64 @@ filter('titlecase', function() {
   }
 
 });
+</script>
+  <script type="text/javascript">
+(function (){
+  'use strict';
+
+  angular
+    .module('app.error', [])
+    .factory('Error', ['$state', errorService])
+    .controller('errorController', [
+      '$scope',
+      '$state',
+      '$stateParams',
+      errorController
+    ]);
+
+  function errorController($scope, $state, $stateParams) {
+    console.log('here');
+    $scope.title = 'Unknown Error';
+    $scope.message = 'Please try again.';
+  }
+
+  function errorService($state) {
+    var factory = {
+      'reject': reject
+    };
+
+    return factory;
+
+    function reject(res) {
+      if (!res || !res.code) {
+        Airbitz.ui.showAlert('Error', 'An unknown error occurred.');
+      } else {
+        if (res.code == 'MissingRequiredParameter') {
+          Airbitz.ui.showAlert('Error', 'The request is missing required data.');
+        } else if (res.code == 'InvalidParameterValue') {
+          Airbitz.ui.showAlert('Invalid', res.message);
+        } else if (res.code == 'UnauthorizedException') {
+          if (res.message && res.message.match(/nonce/i)) {
+            $state.go('error');
+          } else {
+            Airbitz.ui.showAlert('Unauthorized', res.message);
+          }
+        } else if (res.code == 'ConflictException') {
+          if (res.message && res.message.match(/email not verified/i)) {
+            $state.go('verifyEmail');
+            Airbitz.ui.showAlert('Error', 'Please verify your email address before continuing.');
+          } else {
+            Airbitz.ui.showAlert('Error', res.message);
+          }
+        } else {
+          Airbitz.ui.showAlert('Default Error', "An unknown error occurred.");
+        }
+      }
+    }
+  }
+
+})();
+
 </script>
   <script type="text/javascript">
 
@@ -7067,9 +7161,15 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
       templateUrl: "app/user/partials/verify.email.html",
       controller: "verifyEmailController",
     })
+    // route for signup info verification
+    .state("verifyInfo", {
+      url: "/signup/verify/info/",
+      templateUrl: "app/user/partials/userAccount.html",
+      controller: "verifyInfoController",
+    })
     // route for phone verification
     .state("verifyPhone", {
-      url: "/signup/verify/phone/",
+      url: "/signup/verify/phone/:change",
       templateUrl: "app/user/partials/verify.phone.html",
       controller: "verifyPhoneController",
     })
@@ -7089,7 +7189,13 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
     .state("exchangeAddBankAccount", {
       url: "/exchange/add/bankAccount/",
       templateUrl: "app/exchange/partials/add.bankAccount.html",
-      controller: "addAccountController",
+      controller: "addBankAccountController",
+    })
+    // route for verifying a bank account
+    .state("exchangeVerifyBankAccount", {
+      url: "/exchange/verify/:uuid/",
+      templateUrl: "app/exchange/partials/verify.bankAccount.html",
+      controller: "verifyBankAccountController",
     })
     .state("exchangeEditBankController", {
       url: "/exchange/edit/bankAccount/:uuid/",
@@ -7132,6 +7238,15 @@ app.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $ur
       templateUrl: "app/user/partials/userAccount.html",
       controller: "userAccountController",
     })
+    // route for errors
+    .state("error", {
+      url: "/error/",
+      templateUrl: "app/error/partials/error.html",
+      controller: "errorController",
+    })
+}]).
+run(['$rootScope', 'DataFactory', function ($rootScope, DataFactory) {
+  $rootScope.exchange = DataFactory.getExchange();
 }]);
 
 </script>
@@ -7217,70 +7332,97 @@ try {
   module = angular.module('app', []);
 }
 module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/error/partials/error.html',
+    '<div class="error-screen text-center row">\n' +
+    '  <div class="col-xs-12">\n' +
+    '    <h2>{{ title }}</h2>\n' +
+    '    <h3>{{ message }}</h3>\n' +
+    '  </div>\n' +
+    '</div>');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/exchange/partials/add.bankAccount.html',
     '\n' +
-    '<div ng-if="bankAccount.status === \'PENDING\'">\n' +
-    '\n' +
-    '  <h3>Verify Account</h3>\n' +
-    '\n' +
-    '  <div class="row">\n' +
-    '    <p class="col-xs-12" style="margin-top: 15px; margin-bottom: 15px;">Please check your account for two deposits from <label class="label label-info">{{ exchange.depositId }}</label> and input them below.</p>\n' +
-    '    <div class="col-xs-6">\n' +
-    '      <label for="inputDepositAmount1" class="">Deposit 1</label>\n' +
-    '      <input type="text" id="inputDepositAmount1" class="form-control" placeholder=".35" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '    <div class="col-xs-6">\n' +
-    '      <label for="inputDepositAmount2" class="">Deposit 2</label>\n' +
-    '      <input type="text" id="inputDepositAmount2" class="form-control" placeholder="1.05" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '  </div>\n' +
-    '\n' +
-    '  <div class="row" style="margin-top: 15px;">\n' +
-    '    <div class="col-xs-12 text-right">\n' +
-    '      <button class="btn btn-warning">Verify</button>\n' +
-    '    </div>\n' +
-    '  </div>\n' +
-    '\n' +
-    '  <hr />\n' +
-    '\n' +
-    '</div>\n' +
-    '\n' +
     '<div class="exchange-add-bank-account row">\n' +
-    '\n' +
     '  <div class="col-xs-12">\n' +
-    '\n' +
-    '    <form ng-submit="saveBankAccount()" class="form">\n' +
-    '\n' +
+    '    <form ng-submit="saveBankAccount()" name="form" class="form" novalidate>\n' +
     '      <div class="form-group">\n' +
     '        <label for="inputBankAccountDescription" class="">Description</label>\n' +
-    '        <input ng-model="bankAccount.description" type="text" id="inputBankAccountDescription"\n' +
-    '               class="form-control" placeholder="My Checking" autofocus="" autocomplete="off">\n' +
+    '        <input ng-model="bankAccount.description"\n' +
+    '               name="description"\n' +
+    '               type="text"\n' +
+    '               id="inputBankAccountDescription"\n' +
+    '               class="form-control" \n' +
+    '               placeholder="My Checking"\n' +
+    '               autofocus=""\n' +
+    '               autocomplete="off"\n' +
+    '               required="" />\n' +
+    '        <div ng-show="form.$submitted || form.description.$touched">\n' +
+    '            <div ng-show="form.description.$error.required">Required.</div>\n' +
+    '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <div class="form-group">\n' +
     '        <label for="inputAccountType" class="">Account Type</label>\n' +
-    '        <select ng-model="bankAccount.bankAccountType" id="inputAccountType" class="form-control">\n' +
+    '        <select ng-model="bankAccount.bankAccountType"\n' +
+    '                id="inputAccountType"\n' +
+    '                name="bankAccountType"\n' +
+    '                class="form-control">\n' +
     '          <option value="CHECKING">Checking</option>\n' +
     '          <option value="SAVINGS">Savings</option>\n' +
     '        </select>\n' +
+    '\n' +
+    '        <div ng-show="form.$submitted || form.description.$touched">\n' +
+    '            <div ng-show="form.bankAccountType.$error.required">Required.</div>\n' +
+    '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <div class="form-group">\n' +
     '        <label for="inputBankAccountNumber" class="">Account Number</label>\n' +
-    '        <input ng-model="bankAccount.accountNumber" type="text" id="inputBankAccountNumber"\n' +
-    '               class="form-control" placeholder="123456789" autofocus="" autocomplete="off">\n' +
+    '        <input ng-model="bankAccount.accountNumber"\n' +
+    '               name="accountNumber"\n' +
+    '               type="text"\n' +
+    '               id="inputBankAccountNumber"\n' +
+    '               class="form-control"\n' +
+    '               placeholder="123456789"\n' +
+    '               autofocus=""\n' +
+    '               autocomplete="off" \n' +
+    '               required="" />\n' +
+    '        <div ng-show="form.$submitted || form.accountNumber.$touched">\n' +
+    '            <div ng-show="form.accountNumber.$error.required">Required.</div>\n' +
+    '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <div class="form-group">\n' +
     '        <label for="inputBankRoutingNumber" class="">Routing Number</label>\n' +
-    '        <input ng-model="bankAccount.routingNumber" type="text" id="inputBankRoutingNumber"\n' +
-    '               class="form-control" placeholder="987654321" autofocus="" autocomplete="off">\n' +
+    '        <input ng-model="bankAccount.routingNumber"\n' +
+    '               name="routingNumber"\n' +
+    '               type="number"\n' +
+    '               id="inputBankRoutingNumber"\n' +
+    '               class="form-control"\n' +
+    '               placeholder="987654321"\n' +
+    '               autofocus=""\n' +
+    '               autocomplete="off"\n' +
+    '               required=""\n' +
+    '               routing-number-validator />\n' +
+    '        <div ng-show="form.$submitted || form.routingNumber.$touched">\n' +
+    '            <div ng-show="form.routingNumber.$error.required">Required.</div>\n' +
+    '            <div ng-show="form.routingNumber.$error.routingNumber">This is not a valid routing number.</div>\n' +
+    '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <div class="next-cancel row text-right">\n' +
     '        <div class="col-xs-12">\n' +
     '          <button type="button" ui-sref="exchange" class="btn btn-lg btn-link">Cancel</button>\n' +
-    '          <button type="submit" class="btn btn-lg btn-success">Save</button>\n' +
+    '          <button type="submit" ng-disabled="form.$invalid" class="btn btn-lg btn-success">Save</button>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7290,7 +7432,6 @@ module.run(['$templateCache', function($templateCache) {
     '      </div>\n' +
     '\n' +
     '    </form>\n' +
-    '\n' +
     '  </div>\n' +
     '</div>\n' +
     '');
@@ -7305,50 +7446,6 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/exchange/partials/edit.bankAccount.html',
-    '\n' +
-    '<div ng-if="bankAccount.status === \'Pending\'">\n' +
-    '    <form class="form" name="verifyForm" novalidate>\n' +
-    '        <h3>Verify Account</h3>\n' +
-    '        <div class="row">\n' +
-    '            <p class="col-xs-12" style="margin-top: 15px; margin-bottom: 15px;">Please check your account for two deposits from <label class="label label-info">{{ exchange.depositId }}</label> and input them below.</p>\n' +
-    '            <div class="col-xs-6">\n' +
-    '                <label for="inputDepositAmount1" class="">Deposit 1</label>\n' +
-    '                <input ng-model="deposit.amount1" name="amount1" type="number" id="inputDepositAmount1" class="form-control"\n' +
-    '                       placeholder="0.35"\n' +
-    '                       autofocus=""\n' +
-    '                       autocomplete="off"\n' +
-    '                       required="" />\n' +
-    '                <div ng-show="verifyForm.$submitted || verifyForm.amount1.$touched">\n' +
-    '                    <div ng-show="verifyForm.amount1.$error.required">Required.</div>\n' +
-    '                    <div ng-show="verifyForm.amount1.$error.number">This is not a valid number.</div>\n' +
-    '                </div>\n' +
-    '            </div>\n' +
-    '            <div class="col-xs-6">\n' +
-    '                <label for="inputDepositAmount2" class="">Deposit 2</label>\n' +
-    '                <input ng-model="deposit.amount2" name="amount2" type="number" id="inputDepositAmount2" class="form-control"\n' +
-    '                       placeholder="0.15"\n' +
-    '                       autofocus=""\n' +
-    '                       autocomplete="off"\n' +
-    '                       required="" />\n' +
-    '\n' +
-    '                <div ng-show="verifyForm.$submitted || verifyForm.amount2.$touched">\n' +
-    '                    <div ng-show="verifyForm.amount2.$error.required">Required.</div>\n' +
-    '                    <div ng-show="verifyForm.amount2.$error.number">This is not a valid number.</div>\n' +
-    '                </div>\n' +
-    '            </div>\n' +
-    '        </div>\n' +
-    '        <div class="row" style="margin-top: 15px;">\n' +
-    '            <div class="col-xs-12 text-right">\n' +
-    '                <button type="submit"\n' +
-    '                        ng-disabled="verifyForm.$invalid"\n' +
-    '                        ng-click="verifyAccount()"\n' +
-    '                        class="btn btn-warning">Verify</button>\n' +
-    '            </div>\n' +
-    '        </div>\n' +
-    '    </form>\n' +
-    '    <hr />\n' +
-    '</div>\n' +
-    '\n' +
     '<div class="exchange-edit-bank-account row">\n' +
     '\n' +
     '  <div class="col-xs-12">\n' +
@@ -7367,14 +7464,6 @@ module.run(['$templateCache', function($templateCache) {
     '      </div>\n' +
     '\n' +
     '      <table class="bank-account-info table table-bordered">\n' +
-    '        <tr>\n' +
-    '          <td>Primary Account</td>\n' +
-    '          <td>\n' +
-    '            <input ng-model="bankAccount.primary"\n' +
-    '            type="checkbox" id="inputIsPrimary" />\n' +
-    '          </td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
     '        <tr>\n' +
     '          <td>Account Type</td>\n' +
     '          <td>{{ bankAccount.bankAccountType }}</td>\n' +
@@ -7412,7 +7501,7 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/exchange/partials/exchange.html',
-    '<div class="buy-sell row">\n' +
+    '<div ng-if="userStatus.userCanTransact" class="buy-sell row">\n' +
     '  <div class="col-xs-6">\n' +
     '    <button ng-click="buy()" class="buy-button btn-success btn-lg btn-block btn"><i class="fa fa-bitcoin"></i> BUY</button>\n' +
     '  </div>\n' +
@@ -7421,23 +7510,25 @@ module.run(['$templateCache', function($templateCache) {
     '  </div>\n' +
     '</div>\n' +
     '\n' +
-    '<div exchange-limits></div>\n' +
+    '<div ng-if="userStatus.userCanTransact" exchange-limits></div>\n' +
     '\n' +
     '<div account-summary></div>\n' +
     '\n' +
     '\n' +
-    '<div class="exchange-payment-list row">\n' +
+    '<div ng-if="userStatus.userCanTransact" class="exchange-payment-list row">\n' +
     '  <div class="col-xs-12">\n' +
     '    <ul class="exchange-payment-options list-group" ng-model="bankAccounts">\n' +
     '      <li class="list-group-item header"><i class="fa fa-bank"></i>Payment Methods <button ng-if="bankAccounts.length == 0" ng-click="addBankAccount()" class="btn btn-primary btn-xs pull-right">ADD NEW</button></li>\n' +
     '\n' +
-    '      <li ui-sref="exchangeEditBankController({uuid: a.bankAccountUuid})" class="list-group-item" ng-repeat="a in bankAccounts">\n' +
+    '      <li ng-click="routeBankAccount(bankAccount)"\n' +
+    '          class="list-group-item"\n' +
+    '          ng-repeat="bankAccount in bankAccounts">\n' +
     '        <div class="row">\n' +
-    '          <div class="col-xs-12">{{ a.description }}</div>\n' +
+    '          <div class="col-xs-12">{{ bankAccount.description }}</div>\n' +
     '        </div>\n' +
     '        <div class="row">\n' +
     '          <div class="col-xs-12">\n' +
-    '            <small>{{a.accountNumber}}</small> <label class="label label-outline pull-right">{{ a.status || \'UNKNOWN\' }}</label>\n' +
+    '            <small>{{bankAccount.accountNumber}}</small> <label class="label label-outline pull-right">{{ bankAccount.status || \'UNKNOWN\' }}</label>\n' +
     '          </div>\n' +
     '        </div>\n' +
     '      </li>\n' +
@@ -7515,7 +7606,7 @@ module.run(['$templateCache', function($templateCache) {
     '<div class="exchange-buy-sell-interface row">\n' +
     '  <div class="col-xs-12">\n' +
     '\n' +
-    '    <form ng-submit="next()" class="form">\n' +
+    '    <form ng-submit="next()" class="form" name="form">\n' +
     '      <div class="row">\n' +
     '        <div class="col-xs-6 form-group">\n' +
     '          <label for="inputBtcWallet" class="">BTC Wallet</label>\n' +
@@ -7547,12 +7638,13 @@ module.run(['$templateCache', function($templateCache) {
     '            ng-model="order.orderFiatInput"\n' +
     '            ng-change="convertFiatValue(order.orderFiatInput)"\n' +
     '            type="number"\n' +
+    '            name="orderFiatInput"\n' +
     '            class="large"\n' +
     '            id="inputFiatAmount"\n' +
     '            placeholder="100.00"\n' +
     '            autofocus="true"\n' +
     '            step="any"\n' +
-    '          >\n' +
+    '            required="" />\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -7563,19 +7655,25 @@ module.run(['$templateCache', function($templateCache) {
     '            ng-model="order.orderBtcInput"\n' +
     '            ng-change="convertBtcValue(order.orderBtcInput)"\n' +
     '            type="number"\n' +
+    '            name="orderBtcInput"\n' +
     '            class="large"\n' +
     '            id="inputBtcAmount"\n' +
     '            placeholder="0.5"\n' +
-    '            autofocus="true"\n' +
+    '            autofocus=""\n' +
     '            step="any"\n' +
-    '          >\n' +
+    '            required="" />\n' +
     '        </div>\n' +
     '      </div>\n' +
+    '\n' +
+    '     <div ng-show="form.$submitted || form.orderBtcInput.$touched || form.orderFiatInput.$touched">\n' +
+    '        <div ng-show="form.orderBtcInput.$error.required">BTC amount is required.</div>\n' +
+    '        <div ng-show="form.orderFiatInput.$error.required">Fiat Amount is required.</div>\n' +
+    '     </div>\n' +
     '\n' +
     '      <div class="row text-right" style="margin-top: 40px;">\n' +
     '        <div class="col-xs-12">\n' +
     '          <button type="button" ui-sref="exchange" class="buy-sell-next btn btn-lg btn-link">Cancel</button>\n' +
-    '          <button type="submit" class="buy-sell-next btn btn-lg btn-success">Next</button>\n' +
+    '          <button type="submit" ng-disabled="form.$invalid" class="buy-sell-next btn btn-lg btn-success">Next</button>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '    </form>\n' +
@@ -7726,6 +7824,49 @@ try {
   module = angular.module('app', []);
 }
 module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/exchange/partials/verify.bankAccount.html',
+    '<div class="exchange-verify-bank-account row">\n' +
+    '  <div class="col-xs-12">\n' +
+    '    <form name="form" class="form" novalidate>\n' +
+    '      <div class="row">\n' +
+    '          <p class="col-xs-12" style="margin-top: 15px; margin-bottom: 15px;">Please check your account for two deposits from <label class="label label-info">{{ exchange.depositId }}</label> and input them below.</p>\n' +
+    '          <div class="col-xs-6">\n' +
+    '              <label for="inputDepositAmount1" class="">Deposit Amount</label>\n' +
+    '              <input ng-model="deposit.amount1"\n' +
+    '                     type="number"\n' +
+    '                     id="inputDepositAmount1"\n' +
+    '                     class="form-control"\n' +
+    '                     placeholder="0.15"\n' +
+    '                     autofocus=""\n' +
+    '                     autocomplete="off"\n' +
+    '                     name="amount1"\n' +
+    '                     required="" />\n' +
+    '              <div class="input-error" ng-show="form.$submitted || form.amount1.$touched">\n' +
+    '                <span ng-show="form.amount1.$error.required" class="label label-danger">Required</span>\n' +
+    '                <span ng-show="form.amount1.$error.number" class="label label-danger">Number Required</span>\n' +
+    '              </div>\n' +
+    '          </div>\n' +
+    '\n' +
+    '          <div class="col-xs-6" style="margin-top: 25px;">\n' +
+    '              <button type="submit"\n' +
+    '                      ng-disabled="form.$invalid"\n' +
+    '                      ng-click="verifyAccount()"\n' +
+    '                      class="btn btn-block btn-warning">Verify</button>\n' +
+    '          </div>\n' +
+    '      </div>\n' +
+    '    </form>\n' +
+    '  </div>\n' +
+    '</div>');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/limits/partials/buy.html',
     '<div class="limit-daily-buy">\n' +
     '  <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailyBuyRemaining | currency:"$"}}</span>\n' +
@@ -7829,16 +7970,24 @@ module.run(['$templateCache', function($templateCache) {
     '<div class="exchange-user-account row">\n' +
     '  <div class="col-xs-12">\n' +
     '    <ul class="list-group">\n' +
-    '      <li class="header list-group-item"><i class="fa fa-user"></i> User Account <button ui-sref="home" class="btn btn-xs btn-danger pull-right">Log Out</button>\n' +
+    '      <li class="header list-group-item"><i class="fa fa-user"></i> {{ account.firstName || \'\' }} {{ account.lastName || \'\' }}\n' +
+    '        <label\n' +
+    '          class="label label-primary pull-right">\n' +
+    '          {{ userStatus.userCanTransact | statusFilter }}\n' +
+    '        </label>\n' +
     '      </li>\n' +
-    '      <li ui-sref="account" class="list-group-item">\n' +
-    '        {{ account.firstName || \'\' }} {{ account.lastName || \'\' }}\n' +
-    '        <label class="label label-outline pull-right">{{ account.status | statusFilter }}</label>\n' +
+    '      <li class="list-group-item">Email\n' +
+    '        <label class="label label-outline pull-right">{{ userStatus.userEmailIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
-    '      <li class="list-group-item">Email</li>\n' +
-    '      <li class="list-group-item">Mobile Phone</li>\n' +
-    '      <li class="list-group-item">Account Info</li>\n' +
-    '      <li class="list-group-item">Bank Account</li>\n' +
+    '      <li ui-sref="verifyPhone" class="list-group-item">Mobile Phone\n' +
+    '        <label class="label label-outline pull-right">{{ userStatus.userPhoneIsSetup | statusFilter }}</label>\n' +
+    '      </li>\n' +
+    '      <li ui-sref="account" class="list-group-item">Account Info\n' +
+    '        <label class="label label-outline pull-right">{{ userStatus.userBasicInfoIsSetup | statusFilter }}</label>\n' +
+    '      </li>\n' +
+    '      <li ng-click="routeBankAccount()" class="list-group-item">Bank Account\n' +
+    '        <label class="label label-outline pull-right">{{ userStatus.userBankAccountIsSetup | statusFilter }}</label>\n' +
+    '      </li>\n' +
     '    </ul>\n' +
     '  </div>\n' +
     '</div>');
@@ -7920,52 +8069,96 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/user/partials/userAccount.html',
-    '<div class="row">\n' +
-    '  <form ng-submit="saveUserAccount()" class="exchange-sign-up col-xs-12">\n' +
+    '<div class="user-account-form row">\n' +
+    '  <form name="form" ng-submit="saveUserAccount()" class="exchange-sign-up col-xs-12" novalidate>\n' +
     '\n' +
     '    <div class="form-group">\n' +
     '      <label for="inputFirstName" class="">Name</label>\n' +
     '      <input ng-model="account.firstName" ng-required="true"\n' +
-    '             type="text" id="inputFirstName" class="form-control" placeholder="First: Ricky" autofocus="true" autocomplete="off">\n' +
+    '             type="text" id="inputFirstName" class="form-control" placeholder="First name" autofocus="true" autocomplete="off"\n' +
+    '             name="firstName"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.firstName.$touched">\n' +
+    '        <span ng-show="form.firstName.$error.required" class="label label-danger">Required</span>\n' +
+    '      </div>\n' +
     '    </div>\n' +
     '\n' +
     '    <div class="form-group">\n' +
     '      <label for="inputLastName" class="sr-only">Last</label>\n' +
     '      <input ng-model="account.lastName" ng-required="true"\n' +
-    '             type="text" id="inputLastName" class="form-control" placeholder="Last: Williams" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputAddress" class="">Address</label>\n' +
-    '      <input ng-model="account.address1" type="text" id="inputAddressStreet" class="form-control" placeholder="Street Address" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputAddress" class="sr-only">Address 2</label>\n' +
-    '      <input ng-model="account.address2" type="text" id="inputAddressStreet" class="form-control" placeholder="Street Address 2" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputAddressCity" class="sr-only">City</label>\n' +
-    '      <input ng-model="account.city" type="text" id="inputAddressCity" class="form-control" placeholder="City" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputAddressZip" class="sr-only">Zip</label>\n' +
-    '      <input ng-model="account.zipCode" type="text" id="inputAddressZip" class="form-control" placeholder="19512" autofocus="" autocomplete="off">\n' +
-    '    </div>\n' +
-    '\n' +
-    '    <div class="row">\n' +
-    '      <div class="form-group col-xs-6">\n' +
-    '        <select ng-options="o.name for o in states" ng-model="account.state" class="form-control">\n' +
-    '          <option value="">-- Select a State --</option>\n' +
-    '        </select>\n' +
+    '             type="text" id="inputLastName" class="form-control" placeholder="Last name" autofocus="" autocomplete="off"\n' +
+    '             name="lastName"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.lastName.$touched">\n' +
+    '        <span ng-show="form.lastName.$error.required" class="label label-danger">Required</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
     '    <div class="form-group">\n' +
+    '      <label for="inputAddress" class="">Address</label>\n' +
+    '      <input ng-model="account.address1"\n' +
+    '             type="text" id="inputAddressStreet" class="form-control" placeholder="Address" autofocus="" autocomplete="off"\n' +
+    '             name="address"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.address.$touched">\n' +
+    '        <span ng-show="form.address.$error.required" class="label label-danger">Required</span>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="inputAddress2" class="sr-only">Address 2</label>\n' +
+    '      <input ng-model="account.address2"\n' +
+    '             type="text" id="inputAddressStreet2" class="form-control" placeholder="Address 2" autofocus="" autocomplete="off" />\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="inputAddressCity" class="sr-only">City</label>\n' +
+    '      <input ng-model="account.city"\n' +
+    '             type="text" id="inputAddressCity" class="form-control" placeholder="City" autofocus="" autocomplete="off"\n' +
+    '             name="city"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.city.$touched">\n' +
+    '        <span ng-show="form.city.$error.required" class="label label-danger">Required</span>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="row">\n' +
+    '      <div class="form-group col-xs-6">\n' +
+    '        <select ng-options="o.name for o in states" ng-model="account.state" class="form-control"\n' +
+    '                name="state"\n' +
+    '                required="" />\n' +
+    '          <option value="">-- Select a State --</option>\n' +
+    '        </select>\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.state.$touched">\n' +
+    '          <span ng-show="form.state.$error.required" class="label label-danger">Required</span>\n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="inputAddressZip" class="sr-only">Zip</label>\n' +
+    '      <input ng-model="account.zipCode"\n' +
+    '             type="text" id="inputAddressZip" class="form-control" placeholder="Postal Code" autofocus="" autocomplete="off"\n' +
+    '             name="zip"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.zip.$touched">\n' +
+    '        <span ng-show="form.zip.$error.required" class="label label-danger">Required</span>\n' +
+    '        <span ng-show="form.zip.$error.number" class="label label-danger">Number Required</span>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '\n' +
+    '\n' +
+    '    <div class="form-group">\n' +
     '      <label for="inputDob" class="">Date of Birth</label>\n' +
-    '      <input ng-model="account.birthDate" type="text" id="inputDob" class="form-control" placeholder="07-04-1776" autofocus="" autocomplete="off">\n' +
+    '      <input ng-model="account.birthDate"\n' +
+    '             type="date" id="inputDob" class="form-control" placeholder="YYYY-MM-DD" autofocus=""\n' +
+    '             autocomplete="off"\n' +
+    '             name="dob"\n' +
+    '             required="" />\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.dob.$touched">\n' +
+    '        <span ng-show="form.dob.$error.required" class="label label-danger">Required</span>\n' +
+    '        <span ng-show="form.dob.$error.date" class="label label-danger">Date Required</span>\n' +
+    '      </div>\n' +
     '    </div>\n' +
     '\n' +
     '    <div class="row text-right" style="margin-top: 40px;">\n' +
@@ -7996,24 +8189,15 @@ module.run(['$templateCache', function($templateCache) {
     '  <h3 class="col-xs-12"><label class="label label-outline">{{exchange.emailVerificationAddress}}</label></h3>\n' +
     '</div>\n' +
     '\n' +
-    '<div class="row text-center" style="margin: 40px 0">\n' +
-    '  <div class="col-xs-12">\n' +
-    '    <button ui-sref="signup" class="btn-link btn-lg btn"><i class="fa fa-edit"></i> Change Email</button>\n' +
-    '    <button ng-click="resendEmail(account.email)" class="btn-link btn-lg btn"><i class="fa fa-refresh"></i> Resend Email</button>\n' +
-    '  </div>\n' +
-    '</div>\n' +
-    '\n' +
     '<div class="row" style="margin: 20px 0">\n' +
     '  <p><label class="label label-warning">Note</label> Email will contain a link which must be clicked on phone to proceed past this screen.</p>\n' +
     '</div>\n' +
     '\n' +
     '<div class="row text-right" style="margin-top: 40px;">\n' +
     '  <div class="col-xs-12">\n' +
-    '    <button ui-sref="exchange" \n' +
-    '            class="btn btn-lg btn-link">Skip to Exchange</button>\n' +
-    '    <button ng-click="verifyEmail()" \n' +
+    '    <button ng-click="next()" \n' +
     '            ng-disabled="form.$invalid" \n' +
-    '            class="btn btn-lg btn-success">Simulinkor</button>\n' +
+    '            class="btn btn-lg btn-success">Continue</button>\n' +
     '  </div>\n' +
     '</div>\n' +
     '');
@@ -8028,37 +8212,41 @@ try {
 }
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/user/partials/verify.phone.html',
-    '<div class="row text-center">\n' +
+    '<div class="verify-phone-info row">\n' +
     '  <h3 class="col-xs-12">Verification codes sent from:</h3>\n' +
     '  <h3 class="col-xs-12"><label class="label label-outline">{{exchange.phoneVerificationNumber}}</label></h3>\n' +
     '</div>\n' +
     '\n' +
-    '<div class="row text-center" style="margin-top: 40px">\n' +
-    '  <form name="form" class="form col-xs-offset-2 col-xs-8" novalidate>\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputPhone" class="sr-only">Verification Code</label>\n' +
-    '      <input ng-model="account.phone" name="phone" type="tel" id="inputPhone" class="form-control" \n' +
-    '             placeholder="111-111-1111"\n' +
-    '             autofocus="true"\n' +
-    '             autocomplete="off"\n' +
-    '             phone-number-validator />\n' +
+    '<div class="verify-phone-form text-center row">\n' +
+    '  <form name="form" class="form col-xs-12" novalidate>\n' +
+    '    <div class="row">\n' +
+    '      <div class="form-group col-xs-offset-2 col-xs-8">\n' +
+    '        <label for="inputPhone" class="sr-only">Verification Code</label>\n' +
+    '        <input ng-model="account.phone" name="phone" type="tel" id="inputPhone" class="form-control"\n' +
+    '               placeholder="777-555-1212"\n' +
+    '               autofocus="true"\n' +
+    '               autocomplete="off"\n' +
+    '               phone-number-validator />\n' +
     '\n' +
-    '      <div ng-show="form.$submitted || form.phone.$touched">\n' +
-    '        <div ng-show="form.phone.$error.required">Required.</div>\n' +
-    '        <div ng-show="form.phone.$error.tel">This is not a valid phone number.</div>\n' +
     '      </div>\n' +
+    '\n' +
+    '      <div class="error-message-console col-xs-12" ng-show="form.$submitted || form.phone.$touched">\n' +
+    '        <span ng-show="form.phone.$error.required">Required.</span>\n' +
+    '        <span ng-show="form.phone.$error.tel">Not a valid phone number.</span>\n' +
+    '      </div>\n' +
+    '\n' +
     '    </div>\n' +
     '\n' +
     '    <div class="row" style="margin: 20px 0">\n' +
     '      <p><label class="label label-warning">Note</label> Phone must be able to receive SMS text messages.</p>\n' +
     '    </div>\n' +
     '\n' +
-    '    <div class="row text-right" style="margin-top: 40px;">\n' +
+    '    <div class="text-right row" style="margin-top: 40px;">\n' +
     '      <div class="col-xs-12">\n' +
     '        <button type="button" ui-sref="exchange" class="buy-sell-next btn btn-lg btn-link">Later</button>\n' +
-    '        <button type="submit" \n' +
-    '                ng-click="submitPhone()" \n' +
-    '                ng-disabled="form.$invalid" \n' +
+    '        <button type="submit"\n' +
+    '                ng-click="submitPhone()"\n' +
+    '                ng-disabled="form.$invalid"\n' +
     '                class="buy-sell-next btn btn-lg btn-success">Validate</button>\n' +
     '      </div>\n' +
     '    </div>\n' +
@@ -8104,7 +8292,7 @@ factory('UserFactory', [
     factory.registerUser = function(firstName, lastName, email) {
       var d = $q.defer();
       glideraFactory.register(firstName, lastName, email, '', function(success, b) {
-        var account = UserFactory.getUserAccount();
+        var account = factory.getUserAccount();
         account.firstName = firstName;
         account.lastName = lastName;
         account.email = email;
@@ -8113,6 +8301,28 @@ factory('UserFactory', [
         if (success) {
           Airbitz.core.writeData('account', account);
           d.resolve(b);
+        } else {
+          d.reject(b);
+        }
+      });
+      return d.promise;
+    };
+    var userStatus = Airbitz.core.readData('userStatus') || {
+      'userCanTransact': false,
+      'userEmailIsSetup': false,
+      'userBankAccountIsSetup': false,
+      'userBasicInfoIsSetup': false
+    };
+    factory.getUserAccountStatus = function() {
+      return userStatus;
+    };
+    factory.fetchUserAccountStatus = function() {
+      var d = $q.defer();
+      glideraFactory.userStatus(function(e,s,b) {
+        if (s == 200) {
+          userStatus = b;
+          Airbitz.core.writeData('userStatus', userStatus);
+          d.resolve(userStatus);
         } else {
           d.reject(b);
         }
@@ -8136,7 +8346,7 @@ factory('UserFactory', [
             // XXX: This is kind of hacky
             if (b.birthDate) {
               var birthDate = b.birthDate.replace(/T.*/, '');
-              account.birthDate = $filter('date')(birthDate, 'yyyy-MM-dd');
+              account.birthDate = new Date(birthDate);
             }
             account.registered = true;
 
@@ -8145,7 +8355,7 @@ factory('UserFactory', [
             Airbitz.core.writeData('account', account);
             resolve(account);
           } else {
-            reject();
+            reject(b);
           }
         });
       });
@@ -8155,7 +8365,7 @@ factory('UserFactory', [
         glideraFactory.updateBasicInfo({
           'firstName': account.firstName,
           'lastName': account.lastName,
-          'birthDate': account.birthDate,
+          'birthDate': $filter('date')(account.birthDate, 'yyyy-MM-dd'),
           'address1': account.address1,
           'address2': account.address2,
           'city': account.city,
@@ -8164,9 +8374,9 @@ factory('UserFactory', [
         }, function(e, s, b) {
           if (s === 200) {
             Airbitz.core.writeData('account', account);
-            resolve();
+            resolve(b);
           } else {
-            reject();
+            reject(b);
           }
         });
       });
@@ -8187,13 +8397,13 @@ factory('DataFactory', [
   factory.getTransactions = function() {
     return $q(function(resolve, reject) {
       glideraFactory.transactions(function(e, s, b) {
-        if (e === null) {
+        if (s >= 200 && s < 300) {
           resolve(b.transactions);
           console.log(b.transactions);
 
           // return dummyData
         } else {
-          reject();
+          reject(b);
         }
       });
     });
@@ -8243,12 +8453,12 @@ factory('DataFactory', [
   factory.fetchBankAccounts = function() {
     return $q(function(resolve, reject) {
       glideraFactory.getBankAccounts(function(e, s, b) {
-        if (e === null) {
+        if (s >= 200 && s < 300) {
           bankAccounts = b.bankAccounts; //cache bank accounts
           Airbitz.core.writeData('bankAccounts', bankAccounts);
           resolve(b.bankAccounts);
         } else {
-          reject();
+          reject(b);
         }
       });
     });
@@ -8262,10 +8472,10 @@ factory('DataFactory', [
   factory.fetchBankAccount = function(uuid) {
     return $q(function(resolve, reject) {
       glideraFactory.getBankAccount(uuid, function(e, s, b) {
-        if (e === null) {
+        if (s >= 200 && s < 300) {
           resolve(b);
         } else {
-          reject();
+          reject(b);
         }
       });
     });
@@ -8280,22 +8490,19 @@ factory('DataFactory', [
         bankAccount.routingNumber,
         bankAccount.accountNumber,
         bankAccount.description,
-        bankAccount.bankAccountType, function(e, s, b) {
-        if (s === 200) {
-          resolve(b.bankAccountUuid);
-        } else {
-          reject();
-        }
+        bankAccount.bankAccountType,
+        function(e, s, b) {
+          (s === 200) ? resolve(b.bankAccountUuid) : reject(b);
       });
     });
   };
 
   // MAPS TO: https://sandbox.glidera.com/documentation.xhtml#apiReference-verifyBankAccount
-  factory.verifyBankAccount = function(uuid, amount1, amount2, description) {
-    console.log(uuid + ' ' + amount1 + ' ' + amount2 + ' ' + description);
+  factory.verifyBankAccount = function(uuid, amount1) {;
     return $q(function(resolve, reject) {
-      glideraFactory.verifyBankAccount(uuid, amount1, amount2, description, function(e, s, b) {
-        s == 200 ?  resolve() : reject();
+      glideraFactory.verifyBankAccount(uuid, amount1,
+      function(e, s, b) {
+        (s == 200) ?  resolve(b) : reject(b);
       });
     });
   };
@@ -8307,7 +8514,7 @@ factory('DataFactory', [
           bankAccount.bankAccountUuid, bankAccount.description,
           bankAccount.primary,
       function(e, s, b) {
-          e === null ? resolve(b) : reject();
+        (s === 200) ? resolve(b) : reject(b);
       });
     });
   };
@@ -8315,8 +8522,9 @@ factory('DataFactory', [
   // MAPS TO: https://sandbox.glidera.com/documentation.xhtml#apiReference-deleteBankAccount
   factory.deleteBankAccount = function(accountId) {
     return $q(function(resolve, reject) {
-      glideraFactory.deleteBankAccount(TwoFactor.getCode(), accountId, function(e, s, b) {
-        e === null && s == 200 ? resolve() : reject();
+      glideraFactory.deleteBankAccount(TwoFactor.getCode(), accountId,
+      function(e, s, b) {
+        (s == 200) ? resolve(b) : reject(b);
       });
     });
   };
@@ -8411,9 +8619,9 @@ factory('DataFactory', [
       console.log('refundAddress: ' + data.refundAddress);
       return $q(function(resolve, reject) {
         Airbitz.core.requestSpend(wallet, data.sellAddress, btcToSatoshi(qty), {
-          label: 'Glidera', 
+          label: 'Glidera',
           category: 'Transfer:Glidera',
-          notes: '', 
+          notes: '',
           success: function(signedTx) {
             resolve({'sellAddress': data.sellAddress,
                      'refundAddress': data.refundAddress,
@@ -8448,7 +8656,7 @@ factory('ExchangeFactory', [function() {
     'name': 'Glidera',
     'icon': 'fa-bitcoin',
     'countryCode': 'US', // ISO 3661-1
-    'emailVerificationAddress': 'verifications@glidera.com',
+    'emailVerificationAddress': 'admin@glidera.com',
     'phoneVerificationNumber': '+1 650-331-0021',
     'depositBankName1': 'Bank of America',
     'depositBankAccount1': '90001923932',
