@@ -114,6 +114,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     ((NavigationActivity) getActivity()).popFragment();
                 }
             });
+            mSendConfirmation = null;
         } else {
             mFramework.back();
         }
@@ -145,9 +146,11 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             final SendConfirmationFragment.OnExitHandler exitHandler = new SendConfirmationFragment.OnExitHandler() {
                 public void success(String txId) {
                     mFramework.sendSuccess(cbid, uuid, txId);
+                    mSendConfirmation = null;
                 }
                 public void error() {
                     mFramework.sendError(cbid);
+                    mSendConfirmation = null;
                 }
             };
             getActivity().runOnUiThread(new Runnable() {
