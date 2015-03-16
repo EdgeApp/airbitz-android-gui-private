@@ -27,15 +27,22 @@
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 .glass-input {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.2);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 .data-container {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.noglow {
+  outline: none;
+  border: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  box-shadow: none !important;
 }
 /*
     FIXES FOR WEIRD STUFF
@@ -99,7 +106,7 @@ body hr.page {
 body input[type='text'],
 body input[type='number'],
 body input[type='email'] {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.2);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
@@ -126,6 +133,10 @@ body .btn.btn-link {
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
   box-shadow: none;
 }
+body .btn:focus,
+body .btn:active:focus {
+  outline: none;
+}
 body .help-block {
   color: #999999;
 }
@@ -141,18 +152,64 @@ body .table.table-no-border th,
 body .table.table-no-border td {
   border-top: none;
 }
+body .input-group input[type="number"] {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-transition: border-color ease-in-out 0.15s, -webkit-box-shadow ease-in-out 0.15s;
+  -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+}
+body .input-group input[type=text].large,
+body .input-group input[type=number].large {
+  padding: 12px 12px;
+  font-size: 180%;
+  border: none;
+}
+body .input-group input[type=text].left-square,
+body .input-group input[type=number].left-square {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+body .input-group input[type=text].right-square,
+body .input-group input[type=number].right-square {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+body .input-group input[type=text]:focus,
+body .input-group input[type=number]:focus {
+  outline: none;
+  border: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  box-shadow: none !important;
+}
+body .input-group .input-group-addon {
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+body .input-group .input-group-addon.large {
+  font-size: 180%;
+  border: none;
+}
 body .list-group .list-group-item,
 body .list-group a.list-group-item {
-  color: white;
-  background: rgba(0, 0, 0, 0.2);
+  color: #0f5791;
+  background: rgba(255, 255, 255, 0.2);
   font-size: 20px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   cursor: pointer;
 }
 body .list-group .list-group-item.header,
 body .list-group a.list-group-item.header {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #0f5791;
 }
 body .list-group .list-group-item.header:hover,
 body .list-group a.list-group-item.header:hover,
@@ -160,7 +217,7 @@ body .list-group .list-group-item.header:active,
 body .list-group a.list-group-item.header:active,
 body .list-group .list-group-item.header:focus,
 body .list-group a.list-group-item.header:focus {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.5);
 }
 body .list-group .list-group-item:hover,
 body .list-group a.list-group-item:hover,
@@ -168,7 +225,7 @@ body .list-group .list-group-item:active,
 body .list-group a.list-group-item:active,
 body .list-group .list-group-item:focus,
 body .list-group a.list-group-item:focus {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.5);
 }
 body .list-group .list-group-item:hover,
 body .list-group a.list-group-item:hover,
@@ -203,7 +260,7 @@ body .label.status {
   border-bottom: 0;
 }
 body .exchange-ticker {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -212,7 +269,7 @@ body .exchange-ticker {
   left: 15px;
 }
 body .exchange-limits .buy-limits {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -220,7 +277,7 @@ body .exchange-limits .buy-limits {
   width: 100%;
 }
 body .exchange-limits .sell-limits {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -232,9 +289,6 @@ body .limit-header {
 body .limit-label {
   text-transform: uppercase;
   letter-spacing: -1px;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
-}
-body .limit-data {
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
 }
 body .buy-limits {
@@ -249,7 +303,11 @@ body .buy-limits .limit-label {
 body .buy-limits .limit-data {
   display: inline-block;
   float: right;
-  color: #44d417;
+  color: #42832e;
+}
+body .buy-limits .limit-buy-daily,
+body .buy-limits .limit-buy-monthly {
+  clear: both;
 }
 body .sell-limits {
   float: left;
@@ -263,7 +321,11 @@ body .sell-limits .limit-label {
 body .sell-limits .limit-data {
   display: inline-block;
   float: right;
-  color: #3bcfff;
+  color: #0f5791;
+}
+body .sell-limits .limit-sell-daily,
+body .sell-limits .limit-sell-monthly {
+  clear: both;
 }
 body .exchange-options {
   margin: 40px 0;
@@ -317,32 +379,8 @@ body .exchange-payment-list .ending {
 body .row.next-cancel {
   margin-top: 40px;
 }
-body .exchange-buy-sell-interface input[type="number"] {
-  display: block;
-  width: 100%;
-  padding: 6px 12px;
-  border-radius: 4px;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border-color ease-in-out 0.15s, -webkit-box-shadow ease-in-out 0.15s;
-  -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-}
-body .exchange-buy-sell-interface input[type=text].large,
-body .exchange-buy-sell-interface input[type=number].large {
-  padding: 12px 12px;
-  font-size: 180%;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-body .exchange-buy-sell-interface .input-group-addon {
-  font-size: 180%;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
 body .order-limits {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -354,7 +392,7 @@ body .order-review {
   margin-bottom: 30px;
 }
 body .order-review table {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   padding: 6px 5px;
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -393,19 +431,19 @@ body .transactions .table td {
   background: rgba(0, 0, 0, 0.2);
   font-size: 10px;
 }
-body .live-ticker {
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
-}
 body .live-ticker .live-price-rate {
   font-size: 17px;
 }
+body .live-ticker .live-price-rate .price-rate-label {
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
 body .live-ticker .live-price-rate .price-rate-data {
   font-weight: bold;
-  color: #44d417;
+  color: #42832e;
 }
 body .live-ticker .live-price-expiration .expiration-data {
   font-weight: bold;
-  color: #3bcfff;
+  color: #555555;
 }
 body .verify-phone-info {
   margin-bottom: 20px;
@@ -417,7 +455,7 @@ body .verify-phone-form input[name="phone"] {
 body .error-message-console {
   height: 20px;
   text-align: center;
-  color: #ff7777;
+  color: #d9534f;
 }
 body .error-screen {
   margin-top: 20px;
@@ -580,6 +618,18 @@ _bridge = function() {
 
     exit: function() {
       _native.exit();
+    },
+
+    navStackClear: function() {
+      _native.navStackClear();
+    },
+
+    navStackPush: function(path) {
+      _native.navStackPush(path);
+    },
+
+    navStackPop: function() {
+      _native.navStackPop();
     }
   }
 };
@@ -687,6 +737,19 @@ _bridge = function() {
   Airbitz.ui.exit = function() {
     Airbitz._bridge.exit();
   };
+
+  Airbitz.ui.navStackClear = function() {
+    Airbitz._bridge.navStackClear();
+  };
+
+  Airbitz.ui.navStackPush = function(path) {
+    Airbitz._bridge.navStackPush(path);
+  };
+
+  Airbitz.ui.navStackPop = function() {
+    Airbitz._bridge.navStackPop();
+  };
+
 })(this);
 
 </script>
@@ -6678,16 +6741,21 @@ console.log('history: ' + next + ' ' + current);
       if (next.match(/\.html#\/exchange\/$/)
         || next.match(/\.html#\/signup\/$/)) {
         history.length = 0;
+        Airbitz.ui.navStackClear();
       }
 console.log('pushing: ' + next);
       history.push(next);
+      Airbitz.ui.navStackPush(next);
     });
     Airbitz._bridge.back = function() {
       var el = history.pop();
-console.log('Popped: ' + el);
+      Airbitz.ui.navStackPop();
+console.log('Popped: ' + el + ' ' + history.length);
       if (history.length == 0) {
+console.log('calling exit');
         Airbitz._bridge.exit();
       } else {
+console.log('calling back');
         $window.history.back();
       }
     };
@@ -7502,7 +7570,7 @@ module.run(['$templateCache', function($templateCache) {
     '        ng-model="oldVerificationCode"\n' +
     '        type="number"\n' +
     '        id="inputOldVerificationCode"\n' +
-    '        class="large text-center large"\n' +
+    '        class="large text-center"\n' +
     '        placeholder="Previous 2FA Code"\n' +
     '        autofocus="true"\n' +
     '        autocomplete="off"\n' +
@@ -7710,7 +7778,7 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '      <div class="next-cancel row text-right">\n' +
     '        <div class="col-xs-12">\n' +
-    '            <button type="button" ng-disabled="form.$invalid" ng-if="bankAccount.status !== \'Pending\'" ng-click="deleteBankAccount()" class="btn btn-lg btn-danger pull-left">Delete</button>\n' +
+    '            <button type="button" ng-disabled="form.$invalid" ng-if="bankAccount.status !== \'Pending\'" ng-click="deleteBankAccount()" class="btn btn-xs btn-danger pull-left">Delete</button>\n' +
     '            <button type="button" ui-sref="exchange" class="btn btn-lg btn-link">Cancel</button>\n' +
     '            <button type="submit" ng-disabled="form.$invalid" class="btn btn-lg btn-success">Save</button>\n' +
     '        </div>\n' +
@@ -7872,42 +7940,37 @@ module.run(['$templateCache', function($templateCache) {
     '      </div>\n' +
     '\n' +
     '      <div class="form-group">\n' +
-    '        <label for="inputFiatAmount" class="">Amount to <span\n' +
-    '        ng-class="{\n' +
-    '          \'label-success\' : order.orderAction == \'buy\',\n' +
-    '          \'label-primary\' : order.orderAction == \'sell\',\n' +
-    '        }"\n' +
-    '        class="label label-outline">{{ order.orderAction | uppercase }}</span></label>\n' +
+    '        <label for="inputFiatAmount">Amount to <span class="label label-outline">{{ order.orderAction | uppercase }}</span></label>\n' +
     '        <div class="input-group">\n' +
-    '          <span class="input-group-addon">$</span>\n' +
     '          <input\n' +
     '            ng-model="order.orderFiatInput"\n' +
     '            ng-change="convertFiatValue(order.orderFiatInput)"\n' +
     '            type="number"\n' +
     '            name="orderFiatInput"\n' +
-    '            class="large"\n' +
+    '            class="large right-square"\n' +
     '            id="inputFiatAmount"\n' +
     '            placeholder="100.00"\n' +
     '            autofocus="true"\n' +
     '            step="any"\n' +
     '            required="" />\n' +
+    '          <span class="large input-group-addon">USD</span>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
     '      <div class="form-group">\n' +
     '        <div class="input-group">\n' +
-    '          <span class="input-group-addon">B</span>\n' +
     '          <input\n' +
     '            ng-model="order.orderBtcInput"\n' +
     '            ng-change="convertBtcValue(order.orderBtcInput)"\n' +
     '            type="number"\n' +
     '            name="orderBtcInput"\n' +
-    '            class="large"\n' +
+    '            class="large right-square"\n' +
     '            id="inputBtcAmount"\n' +
     '            placeholder="0.5"\n' +
     '            autofocus=""\n' +
     '            step="any"\n' +
     '            required="" />\n' +
+    '          <span class="large input-group-addon">BTC</span>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '\n' +
@@ -8115,10 +8178,10 @@ try {
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/limits/partials/buy.html',
     '<div class="buy-limits">\n' +
-    '  <div class="limit-daily-buy">\n' +
+    '  <div class="limit-buy-daily">\n' +
     '    <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailyBuyRemaining | currency:"$"}}</span>\n' +
     '  </div>\n' +
-    '  <div class="limit-daily-buy">\n' +
+    '  <div class="limit-buy-monthly">\n' +
     '    <span class="limit-label">Monthly: </span><span class="limit-data">{{ limits.monthlyBuyRemaining | currency:"$"}}</span>\n' +
     '  </div>\n' +
     '</div>');
@@ -8137,10 +8200,10 @@ module.run(['$templateCache', function($templateCache) {
     '  <div class="col-xs-6">\n' +
     '    <label class="limit-header">Buy Limits</label>\n' +
     '    <div class="buy-limits">\n' +
-    '      <div class="limit-daily-buy">\n' +
+    '      <div class="limit-buy-daily">\n' +
     '        <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailyBuyRemaining | currency:"$"}}</span>\n' +
     '      </div>\n' +
-    '      <div class="limit-daily-buy">\n' +
+    '      <div class="limit-buy-monthly">\n' +
     '        <span class="limit-label">Monthly: </span><span class="limit-data">{{ limits.monthlyBuyRemaining | currency:"$"}}</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
@@ -8149,10 +8212,10 @@ module.run(['$templateCache', function($templateCache) {
     '  <div class="col-xs-6">\n' +
     '    <label class="limit-header">Sell Limits</label>\n' +
     '    <div class="sell-limits">\n' +
-    '      <div class="limit-daily-buy">\n' +
+    '      <div class="limit-sell-daily">\n' +
     '        <span class="limit-label">Daily: </span><span class="limit-data">{{ limits.dailySellRemaining | currency:"$"}}</span>\n' +
     '      </div>\n' +
-    '      <div class="limit-daily-buy">\n' +
+    '      <div class="limit-sell-monthly">\n' +
     '        <span class="limit-label">Monthly: </span><span class="limit-data">{{ limits.monthlySellRemaining | currency:"$"}}</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
@@ -8538,7 +8601,8 @@ module.run(['$templateCache', function($templateCache) {
     '    <div class="row">\n' +
     '      <div class="form-group col-xs-offset-2 col-xs-8">\n' +
     '        <label for="inputPhone" class="sr-only">Verification Code</label>\n' +
-    '        <input ng-model="account.phone" name="phone" type="tel" id="inputPhone" class="form-control"\n' +
+    '        <input ng-model="account.phone" name="phone" type="tel" id="inputPhone"\n' +
+    '               class="large glass-input form-control"\n' +
     '               placeholder="777-555-1212"\n' +
     '               autofocus="true"\n' +
     '               autocomplete="off"\n' +

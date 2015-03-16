@@ -52,6 +52,8 @@ import com.airbitz.plugins.PluginFramework.UiHandler;
 import com.airbitz.plugins.PluginFramework.Plugin;
 import com.airbitz.utils.Common;
 
+import java.util.Stack;
+
 public class PluginFragment extends BaseFragment implements NavigationActivity.OnBackPress {
     private final String TAG = getClass().getSimpleName();
 
@@ -60,12 +62,14 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private View mView;
     private PluginFramework mFramework;
     private Plugin mPlugin;
+    private Stack mNav;
 
     private SendConfirmationFragment mSendConfirmation;
 
     public PluginFragment() {
         mFramework = new PluginFramework(handler);
         mFramework.setup();
+        mNav = new Stack<String>();
         setRetainInstance(true);
 
         mPlugin = new Plugin("com.glidera", "Glidera", "file:///android_asset/glidera.html#/exchange/");
@@ -101,6 +105,9 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
 
     @Override
     public boolean onBackPress() {
+        if (mNav.size() == 0) {
+            return false;
+        }
         if (mSendConfirmation != null) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
@@ -186,6 +193,18 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
                     }
                 }
             });
+        }
+
+        public void stackClear() {
+            mNav.clear();
+        }
+
+        public void stackPush(String path) {
+            mNav.push(path);
+        }
+
+        public void stackPop() {
+            mNav.pop();
         }
     };
 
