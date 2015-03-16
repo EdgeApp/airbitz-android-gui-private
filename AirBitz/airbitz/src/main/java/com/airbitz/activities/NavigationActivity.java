@@ -1863,9 +1863,10 @@ public class NavigationActivity extends Activity
         mDrawerBuySell.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mNavStacks[Tabs.MORE.ordinal()].clear();
-
-                pushFragment(new PluginFragment(), NavigationActivity.Tabs.MORE.ordinal());
+                if (!(mNavStacks[Tabs.MORE.ordinal()].peek() instanceof PluginFragment)) {
+                    mNavStacks[Tabs.MORE.ordinal()].clear();
+                    pushFragment(new PluginFragment(), NavigationActivity.Tabs.MORE.ordinal());
+                }
                 switchFragmentThread(Tabs.MORE.ordinal());
                 mDrawer.closeDrawer(mDrawerView);
             }
@@ -1883,8 +1884,10 @@ public class NavigationActivity extends Activity
         mDrawerSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mNavStacks[Tabs.MORE.ordinal()].clear();
-                pushFragment(new SettingFragment(), NavigationActivity.Tabs.MORE.ordinal());
+                if (!(mNavStacks[Tabs.MORE.ordinal()].peek() instanceof SettingFragment)) {
+                    mNavStacks[Tabs.MORE.ordinal()].clear();
+                    pushFragment(new SettingFragment(), NavigationActivity.Tabs.MORE.ordinal());
+                }
                 switchFragmentThread(Tabs.MORE.ordinal());
                 mDrawer.closeDrawer(mDrawerView);
             }
