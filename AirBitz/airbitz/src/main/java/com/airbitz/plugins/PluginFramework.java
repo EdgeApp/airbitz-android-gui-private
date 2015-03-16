@@ -31,6 +31,7 @@
 
 package com.airbitz.plugins;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -40,6 +41,7 @@ import android.webkit.WebView;
 import com.airbitz.R;
 import com.airbitz.models.Wallet;
 import com.airbitz.api.CoreAPI;
+import com.airbitz.AirbitzApplication;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -180,6 +182,7 @@ public class PluginFramework {
     }
 
     private static class PluginContext {
+        Context context;
         CoreAPI api;
         UiHandler handler;
         Plugin plugin;
@@ -288,6 +291,16 @@ public class PluginFramework {
         @JavascriptInterface
         public String exchangeRate(int currencyNum) {
             return jsonResult(new JsonValue<Double>(200.0)).toString();
+        }
+
+        @JavascriptInterface
+        public String getConfig(String key) {
+            if ("GLIDERA_PARTNER_TOKEN".equals(key)) {
+                String token = AirbitzApplication.getContext().getString(R.string.glidera_partner_key);
+                return token;
+            } else {
+                return "";
+            }
         }
 
         @JavascriptInterface
