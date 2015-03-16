@@ -77,6 +77,10 @@ public class PluginFramework {
         public void showNavBar();
         public void hideNavBar();
         public void exit();
+
+        public void stackClear();
+        public void stackPush(String path);
+        public void stackPop();
     }
 
     private static abstract class CallbackTask extends AsyncTask<Void, Void, String> {
@@ -321,6 +325,21 @@ public class PluginFramework {
         @JavascriptInterface
         public void exit() {
             handler.exit();
+        }
+
+        @JavascriptInterface
+        public void navStackClear() {
+            handler.stackClear();
+        }
+
+        @JavascriptInterface
+        public void navStackPush(String path) {
+            handler.stackPush(path);
+        }
+
+        @JavascriptInterface
+        public void navStackPop() {
+            handler.stackPop();
         }
     }
 
