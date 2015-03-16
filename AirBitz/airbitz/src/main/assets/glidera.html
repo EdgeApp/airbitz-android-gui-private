@@ -105,6 +105,7 @@ body hr.page {
 }
 body input[type='text'],
 body input[type='number'],
+body input[type='tel'],
 body input[type='email'] {
   background: rgba(0, 0, 0, 0.2);
   color: white;
@@ -152,7 +153,15 @@ body .table.table-no-border th,
 body .table.table-no-border td {
   border-top: none;
 }
-body .input-group input[type="number"] {
+body .form-control::-webkit-input-placeholder {
+  color: #aaa;
+}
+body .form-group input[type="text"],
+body .input-group input[type="text"],
+body .form-group input[type="number"],
+body .input-group input[type="number"],
+body .form-group input[type="tel"],
+body .input-group input[type="tel"] {
   display: block;
   width: 100%;
   padding: 6px 12px;
@@ -163,37 +172,56 @@ body .input-group input[type="number"] {
   -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
   transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
 }
-body .input-group input[type=text].large,
-body .input-group input[type=number].large {
+body .form-group input[type="text"].large,
+body .input-group input[type="text"].large,
+body .form-group input[type="number"].large,
+body .input-group input[type="number"].large,
+body .form-group input[type="tel"].large,
+body .input-group input[type="tel"].large {
+  height: auto;
   padding: 12px 12px;
   font-size: 180%;
   border: none;
 }
-body .input-group input[type=text].left-square,
-body .input-group input[type=number].left-square {
+body .form-group input[type="text"].left-square,
+body .input-group input[type="text"].left-square,
+body .form-group input[type="number"].left-square,
+body .input-group input[type="number"].left-square,
+body .form-group input[type="tel"].left-square,
+body .input-group input[type="tel"].left-square {
   border-left: none;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-body .input-group input[type=text].right-square,
-body .input-group input[type=number].right-square {
+body .form-group input[type="text"].right-square,
+body .input-group input[type="text"].right-square,
+body .form-group input[type="number"].right-square,
+body .input-group input[type="number"].right-square,
+body .form-group input[type="tel"].right-square,
+body .input-group input[type="tel"].right-square {
   border-right: none;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-body .input-group input[type=text]:focus,
-body .input-group input[type=number]:focus {
+body .form-group input[type="text"]:focus,
+body .input-group input[type="text"]:focus,
+body .form-group input[type="number"]:focus,
+body .input-group input[type="number"]:focus,
+body .form-group input[type="tel"]:focus,
+body .input-group input[type="tel"]:focus {
   outline: none;
   border: none !important;
   -webkit-box-shadow: none !important;
   -moz-box-shadow: none !important;
   box-shadow: none !important;
 }
+body .form-group .input-group-addon,
 body .input-group .input-group-addon {
   background: rgba(0, 0, 0, 0.2);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
+body .form-group .input-group-addon.large,
 body .input-group .input-group-addon.large {
   font-size: 180%;
   border: none;
@@ -354,6 +382,9 @@ body .exchange-balances {
 }
 body .exchange-user-account {
   margin-top: 30px;
+  margin-bottom: 20px;
+}
+body .exchange-user-account .account-message {
   margin-bottom: 20px;
 }
 body .exchange-user-account .list-group-item small {
@@ -6733,7 +6764,6 @@ var app = angular.module('app.core', [
         $location.path('/signup/');
         return;
       }
-console.log('history: ' + next + ' ' + current);
       if (history.length == 0) {
         history.push(current);
       }
@@ -6743,19 +6773,15 @@ console.log('history: ' + next + ' ' + current);
         history.length = 0;
         Airbitz.ui.navStackClear();
       }
-console.log('pushing: ' + next);
       history.push(next);
       Airbitz.ui.navStackPush(next);
     });
     Airbitz._bridge.back = function() {
       var el = history.pop();
       Airbitz.ui.navStackPop();
-console.log('Popped: ' + el + ' ' + history.length);
       if (history.length == 0) {
-console.log('calling exit');
         Airbitz._bridge.exit();
       } else {
-console.log('calling back');
         $window.history.back();
       }
     };
@@ -6771,8 +6797,8 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
     $scope.exchange = DataFactory.getExchange();
     $scope.account = UserFactory.getUserAccount();
   }])
-.controller('dashboardController', ['$scope', '$state', 'Error', 'DataFactory', 'UserFactory', 'Limits',
-  function ($scope, $state, Error, DataFactory, UserFactory, Limits) {
+.controller('dashboardController', ['$scope', '$sce', '$state', 'Error', 'DataFactory', 'UserFactory', 'Limits',
+  function ($scope, $sce, $state, Error, DataFactory, UserFactory, Limits) {
     Airbitz.ui.title('Glidera');
     // set variables that might be cached locally to make sure they load faster if available
     $scope.exchange = DataFactory.getExchange();
@@ -6806,6 +6832,32 @@ angular.module('app.exchange', ['app.dataFactory', 'app.2fa', 'app.prices', 'app
       } else {
         $state.go('exchangeAddBankAccount')
       }
+    };
+
+    $scope.regMessage = function() {
+      var msg = '';
+      var counter = 0;
+
+      if (!$scope.userStatus.userEmailIsSetup) {
+        counter++;
+        msg += '<h5><strong>' + counter + "</strong>. Please verify email</h5>";
+      }
+      if (!$scope.userStatus.userBasicInfoIsSetup) {
+        counter++;
+        msg += '<h5><strong>' + counter + "</strong>. Please verify account info</h5>";
+      }
+      if (!$scope.userStatus.userPhoneIsSetup) {
+        counter++;
+        msg += '<h5><strong>' + counter + "</strong>. Please verify mobile phone</h5>";
+      }
+      if (!$scope.userStatus.userBankAccountIsSetup) {
+        counter++;
+        msg += '<h5><strong>' + counter + "</strong>. Please verify bank account & deposit amount</h5>";
+      }
+      if (msg !== '') {
+        msg = '<h4 style="margin-top: 0;">To Buy or Sell Bitcoin:</h4>' + msg;
+      }
+      return $sce.trustAsHtml(msg);
     };
 
     $scope.buy = function(){
@@ -7568,7 +7620,7 @@ module.run(['$templateCache', function($templateCache) {
     '      <label for="inputOldVerificationCode" class="sr-only">Old Verification Code</label>\n' +
     '      <input\n' +
     '        ng-model="oldVerificationCode"\n' +
-    '        type="number"\n' +
+    '        type="text"\n' +
     '        id="inputOldVerificationCode"\n' +
     '        class="large text-center"\n' +
     '        placeholder="Previous 2FA Code"\n' +
@@ -8282,25 +8334,30 @@ try {
 module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/user/partials/account.html',
     '<div class="exchange-user-account row">\n' +
+    '  <div class="account-message col-xs-12"\n' +
+    '       ng-if="!userStatus.userCanTransact" ng-bind-html="regMessage()">\n' +
+    '  </div>\n' +
     '  <div class="col-xs-12">\n' +
     '    <ul class="list-group">\n' +
-    '      <li ng-click="showAccountOptions()"class="header list-group-item">{{ account.firstName || \'\' }} {{ account.lastName || \'\' }}\n' +
-    '        <label\n' +
-    '          class="status label label-primary pull-right">\n' +
-    '          {{ userStatus.userCanTransact | statusFilter }}\n' +
-    '        </label>\n' +
+    '      <li ng-show="userStatus.userCanTransact" ng-click="showAccountOptions()"class="header list-group-item">{{ account.firstName || \'First\' }} {{ account.lastName || \'Last\' }}\n' +
+    '        <label class="status label label-outline pull-right"\n' +
+    '               ng-class="{\'label-success\': userStatus.userCanTransact}">{{ userStatus.userCanTransact | statusFilter }}</label>\n' +
     '      </li>\n' +
     '      <li ng-show="showOptions" class="list-group-item">Email\n' +
-    '        <label class="status label label-outline pull-right">{{ userStatus.userEmailIsSetup | statusFilter }}</label>\n' +
+    '        <label class="status label label-outline pull-right"\n' +
+    '               ng-class="{\'label-success\': userStatus.userEmailIsSetup}">{{ userStatus.userEmailIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
     '      <li ng-show="showOptions" ui-sref="account" class="list-group-item">Account Info\n' +
-    '        <label class="status label label-outline pull-right">{{ userStatus.userBasicInfoIsSetup | statusFilter }}</label>\n' +
+    '        <label class="status label label-outline pull-right"\n' +
+    '               ng-class="{\'label-success\': userStatus.userBasicInfoIsSetup}">{{ userStatus.userBasicInfoIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
     '      <li ng-show="showOptions" ui-sref="verifyPhone" class="list-group-item">Mobile Phone\n' +
-    '        <label class="status label label-outline pull-right">{{ userStatus.userPhoneIsSetup | statusFilter }}</label>\n' +
+    '        <label class="status label label-outline pull-right"\n' +
+    '               ng-class="{\'label-success\': userStatus.userPhoneIsSetup}">{{ userStatus.userPhoneIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
     '      <li ng-show="showOptions" ng-click="routeBankAccount()" class="list-group-item">Bank Account\n' +
-    '        <label class="status label label-outline pull-right">{{ userStatus.userBankAccountIsSetup | statusFilter }}</label>\n' +
+    '        <label class="status label label-outline pull-right"\n' +
+    '               ng-class="{\'label-success\': userStatus.userBankAccountIsSetup}">{{ userStatus.userBankAccountIsSetup | statusFilter }}</label>\n' +
     '      </li>\n' +
     '    </ul>\n' +
     '  </div>\n' +
@@ -8387,8 +8444,8 @@ module.run(['$templateCache', function($templateCache) {
     '             autofocus="true"\n' +
     '             autocomplete="off"\n' +
     '             required="" />\n' +
-    '      <div ng-show="form.$submitted || form.firstName.$touched">\n' +
-    '        <div ng-show="form.firstName.$error.required">Required.</div>\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.firstName.$touched">\n' +
+    '        <span ng-show="form.firstName.$error.required" class="label label-danger">Required</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
@@ -8399,8 +8456,8 @@ module.run(['$templateCache', function($templateCache) {
     '             autofocus=""\n' +
     '             autocomplete="off"\n' +
     '             required="" />\n' +
-    '      <div ng-show="form.$submitted || form.lastName.$touched">\n' +
-    '        <div ng-show="form.lastName.$error.required">Required.</div>\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.lastName.$touched">\n' +
+    '        <span ng-show="form.lastName.$error.required" class="label label-danger">Required</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
@@ -8411,9 +8468,9 @@ module.run(['$templateCache', function($templateCache) {
     '             autofocus=""\n' +
     '             autocomplete="off"\n' +
     '             required="" />\n' +
-    '      <div ng-show="form.$submitted || form.email.$touched">\n' +
-    '        <span ng-show="form.email.$error.required">Tell us your email.</span>\n' +
-    '        <span ng-show="form.email.$error.email">This is not a valid email.</span>\n' +
+    '      <div class="input-error" ng-show="form.$submitted || form.email.$touched">\n' +
+    '        <span ng-show="form.email.$error.required" class="label label-danger">Required</span>\n' +
+    '        <span ng-show="form.email.$error.email" class="label label-danger">Valid Email Required</span>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
@@ -8431,7 +8488,7 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '    <div class="row text-right" style="margin-top: 40px;">\n' +
     '      <div class="col-xs-12">\n' +
-    '        <button type="button" ui-sref="apiKeys" class="btn btn-sm btn-primary"><i class="fa fa-key"></i> Keys</button>\n' +
+    '        <button type="button" ui-sref="apiKeys" class="btn btn-sm btn-primary">Keys</button>\n' +
     '      </div>\n' +
     '    </div>\n' +
     '\n' +
@@ -8504,29 +8561,27 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '    <div class="row">\n' +
     '      <div class="form-group col-xs-6">\n' +
+    '        <label for="inputAddressZip" class="sr-only">Zip</label>\n' +
+    '        <input ng-model="account.zipCode"\n' +
+    '               type="text" id="inputAddressZip" class="form-control" placeholder="Postal Code" autofocus="" autocomplete="off"\n' +
+    '               name="zip"\n' +
+    '               required="" />\n' +
+    '        <div class="input-error" ng-show="form.$submitted || form.zip.$touched">\n' +
+    '          <span ng-show="form.zip.$error.required" class="label label-danger">Required</span>\n' +
+    '          <span ng-show="form.zip.$error.number" class="label label-danger">Number Required</span>\n' +
+    '        </div>\n' +
+    '      </div>\n' +
+    '      <div class="form-group col-xs-6">\n' +
     '        <select ng-options="o.name for o in states" ng-model="account.state" class="form-control"\n' +
     '                name="state"\n' +
     '                required="" />\n' +
-    '          <option value="">-- Select a State --</option>\n' +
+    '          <option value="">Select a State</option>\n' +
     '        </select>\n' +
     '        <div class="input-error" ng-show="form.$submitted || form.state.$touched">\n' +
     '          <span ng-show="form.state.$error.required" class="label label-danger">Required</span>\n' +
     '        </div>\n' +
     '      </div>\n' +
     '    </div>\n' +
-    '\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputAddressZip" class="sr-only">Zip</label>\n' +
-    '      <input ng-model="account.zipCode"\n' +
-    '             type="text" id="inputAddressZip" class="form-control" placeholder="Postal Code" autofocus="" autocomplete="off"\n' +
-    '             name="zip"\n' +
-    '             required="" />\n' +
-    '      <div class="input-error" ng-show="form.$submitted || form.zip.$touched">\n' +
-    '        <span ng-show="form.zip.$error.required" class="label label-danger">Required</span>\n' +
-    '        <span ng-show="form.zip.$error.number" class="label label-danger">Number Required</span>\n' +
-    '      </div>\n' +
-    '    </div>\n' +
-    '\n' +
     '\n' +
     '    <div class="form-group">\n' +
     '      <label for="inputDob" class="">Date of Birth</label>\n' +
@@ -8599,7 +8654,7 @@ module.run(['$templateCache', function($templateCache) {
     '<div class="verify-phone-form text-center row">\n' +
     '  <form name="form" class="form col-xs-12" novalidate>\n' +
     '    <div class="row">\n' +
-    '      <div class="form-group col-xs-offset-2 col-xs-8">\n' +
+    '      <div class="form-group col-xs-offset-1 col-xs-10">\n' +
     '        <label for="inputPhone" class="sr-only">Verification Code</label>\n' +
     '        <input ng-model="account.phone" name="phone" type="tel" id="inputPhone"\n' +
     '               class="large glass-input form-control"\n' +
