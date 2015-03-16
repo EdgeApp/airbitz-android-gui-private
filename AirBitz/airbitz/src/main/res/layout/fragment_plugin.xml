@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="44.1dp" />
 
-    <WebView
+    <com.airbitz.plugins.PluginWebView
         android:id="@+id/plugin_webview"
         android:windowSoftInputMode="adjustResize"
         android:windowFullscreen="false"
