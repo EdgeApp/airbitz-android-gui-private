@@ -640,10 +640,6 @@ _bridge = function() {
     return Airbitz._bridge.formatCurrency(currency, currencyNum, withSymbol);
   }
 
-  Airbitz.core.exchangeRate = function(currencyNum) {
-    return Airbitz._bridge.exchangeRate(currencyNum);
-  };
-
   Airbitz.config.get = function(key) {
     return Airbitz._bridge.getConfig(key);
   };
@@ -6674,7 +6670,7 @@ var app = angular.module('app.core', [
         $location.path('/signup/');
         return;
       }
-      console.log('history: ' + next + ' ' + current);
+console.log('history: ' + next + ' ' + current);
       if (history.length == 0) {
         history.push(current);
       }
@@ -6683,10 +6679,12 @@ var app = angular.module('app.core', [
         || next.match(/\.html#\/signup\/$/)) {
         history.length = 0;
       }
+console.log('pushing: ' + next);
       history.push(next);
     });
     Airbitz._bridge.back = function() {
       var el = history.pop();
+console.log('Popped: ' + el);
       if (history.length == 0) {
         Airbitz._bridge.exit();
       } else {
@@ -8990,8 +8988,7 @@ factory('ExchangeFactory', [function() {
     'depositId': 'GLIDER-USA-002',
     'supportsBankAccounts': true,
     'supportsCreditCards': false,
-    'currencyNum': 840,
-    'exchangeRate': Airbitz.core.exchangeRate()
+    'currencyNum': 840
   };
 }]).
 factory('States', [function() {

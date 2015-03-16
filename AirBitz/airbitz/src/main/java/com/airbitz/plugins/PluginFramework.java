@@ -289,11 +289,6 @@ public class PluginFramework {
         }
 
         @JavascriptInterface
-        public String exchangeRate(int currencyNum) {
-            return jsonResult(new JsonValue<Double>(200.0)).toString();
-        }
-
-        @JavascriptInterface
         public String getConfig(String key) {
             if ("GLIDERA_PARTNER_TOKEN".equals(key)) {
                 String token = AirbitzApplication.getContext().getString(R.string.glidera_partner_key);
