@@ -1753,17 +1753,21 @@ public class CoreAPI {
     }
 
     public TxResult InitiateTransferOrSend(Wallet sourceWallet, String destinationAddress, long satoshi, String label) {
-        return InitiateTransferOrSend(sourceWallet, destinationAddress, satoshi, label, "", "");
+        return InitiateTransferOrSend(sourceWallet, destinationAddress, satoshi, 0.0, label, "", "");
     }
 
     //this is a blocking call
-    public TxResult InitiateTransferOrSend(Wallet sourceWallet, String destinationAddress, long satoshi, String label, String category, String notes) {
+    public TxResult InitiateTransferOrSend(Wallet sourceWallet, String destinationAddress, long satoshi,
+                                          double amountFiat, String label, String category, String notes) {
         TxResult txResult = new TxResult();
 
         tABC_Error error = new tABC_Error();
         Wallet destinationWallet = getWalletFromUUID(destinationAddress);
         if (satoshi > 0) {
-            double value = SatoshiToCurrency(satoshi, sourceWallet.getCurrencyNum());
+            double value = amountFiat;
+            if (value == 0.0) {
+                value = SatoshiToCurrency(satoshi, sourceWallet.getCurrencyNum());
+            }
 
             //creates a receive request.  Returns a requestID.  Caller must free this ID when done with it
             tABC_TxDetails details = new tABC_TxDetails();

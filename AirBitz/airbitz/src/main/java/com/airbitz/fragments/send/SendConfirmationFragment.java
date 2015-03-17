@@ -140,6 +140,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
     private Boolean mIsUUID;
     private long mAmountMax;
     private long mAmountToSendSatoshi = -1;
+    private double mAmountFiat = -1;
     private long mFees;
     private int mInvalidEntryCount = 0;
     private long mInvalidEntryStartMillis = 0;
@@ -529,6 +530,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
     private void resetFiatAndBitcoinFields() {
         mAutoUpdatingTextFields = true;
         mAmountToSendSatoshi = 0;
+        mAmountFiat = 0.0;
         mFiatField.setText("");
         mBitcoinField.setText("");
         mConversionTextView.setTextColor(Color.WHITE);
@@ -704,7 +706,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                 mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.SEND.ordinal());
              }
 
-             mSendOrTransferTask = new SendOrTransferTask(mSourceWallet, mUUIDorURI, mAmountToSendSatoshi, mLabel, mCategory, mNotes);
+             mSendOrTransferTask = new SendOrTransferTask(mSourceWallet, mUUIDorURI, mAmountToSendSatoshi, mAmountFiat, mLabel, mCategory, mNotes);
              mSendOrTransferTask.execute();
          }
         resetSlider();
@@ -773,6 +775,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
             mCategory = bundle.getString(SendFragment.CATEGORY, "");
             mNotes = bundle.getString(SendFragment.NOTES, "");
             mAmountToSendSatoshi = bundle.getLong(SendFragment.AMOUNT_SATOSHI);
+            mAmountFiat = bundle.getDouble(SendFragment.AMOUNT_FIAT);
             mIsUUID = bundle.getBoolean(SendFragment.IS_UUID);
             mLocked = bundle.getBoolean(SendFragment.LOCKED);
             mSourceWallet = mCoreAPI.getWalletFromUUID(bundle.getString(SendFragment.FROM_WALLET_UUID));
@@ -975,15 +978,17 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
     public class SendOrTransferTask extends AsyncTask<Void, Void, CoreAPI.TxResult> {
         private final String mAddress;
         private final long mSatoshi;
+        private final double mAmountFiat;
         private final String mLabel;
         private final String mCategory;
         private final String mNotes;
         private Wallet mFromWallet;
 
-        SendOrTransferTask(Wallet fromWallet, String address, long amount, String label, String category, String notes) {
+        SendOrTransferTask(Wallet fromWallet, String address, long amount, double amountFiat, String label, String category, String notes) {
             mFromWallet = fromWallet;
             mAddress = address;
             mSatoshi = amount;
+            mAmountFiat = amountFiat;
             mLabel = label;
             mCategory = category;
             mNotes = notes;
@@ -997,7 +1002,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
         @Override
         protected CoreAPI.TxResult doInBackground(Void... params) {
             Log.d(TAG, "Initiating SEND");
-            return mCoreAPI.InitiateTransferOrSend(mFromWallet, mAddress, mSatoshi, mLabel, mCategory, mNotes);
+            return mCoreAPI.InitiateTransferOrSend(mFromWallet, mAddress, mSatoshi, mAmountFiat, mLabel, mCategory, mNotes);
         }
 
         @Override

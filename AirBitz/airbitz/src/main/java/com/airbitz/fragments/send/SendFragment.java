@@ -96,6 +96,7 @@ public class SendFragment extends BaseFragment implements
     private final String FIRST_BLE_USAGE_COUNT = "com.airbitz.fragments.send.firstusageblecount";
 
     public static final String AMOUNT_SATOSHI = "com.airbitz.Sendfragment_AMOUNT_SATOSHI";
+    public static final String AMOUNT_FIAT = "com.airbitz.Sendfragment_AMOUNT_FIAT";
     public static final String LABEL = "com.airbitz.Sendfragment_LABEL";
     public static final String CATEGORY = "com.airbitz.Sendfragment_CATEGORY";
     public static final String NOTES = "com.airbitz.Sendfragment_NOTES";
