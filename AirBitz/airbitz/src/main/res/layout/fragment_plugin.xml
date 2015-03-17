@@ -12,9 +12,8 @@
 
     <com.airbitz.plugins.PluginWebView
         android:id="@+id/plugin_webview"
-        android:windowSoftInputMode="adjustResize"
-        android:windowFullscreen="false"
         android:layout_below="@id/layout_title_header"
+        android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
