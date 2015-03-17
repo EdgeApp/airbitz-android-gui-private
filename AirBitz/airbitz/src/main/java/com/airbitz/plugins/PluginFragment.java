@@ -43,6 +43,11 @@ import android.webkit.WebViewClient;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import android.graphics.Rect;
+import android.util.Log;
+import android.view.ViewTreeObserver;
+import android.widget.LinearLayout;
+
 import com.airbitz.R;
 import com.airbitz.activities.NavigationActivity;
 import com.airbitz.fragments.BaseFragment;
@@ -63,6 +68,10 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private PluginFramework mFramework;
     private Plugin mPlugin;
     private Stack mNav;
+
+    private int previousHeight;
+    private LinearLayout.LayoutParams frameLayoutParams;
+
 
     private SendConfirmationFragment mSendConfirmation;
 
@@ -100,8 +109,39 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         mFramework.buildPluginView(mPlugin, mWebView);
         mWebView.loadUrl(mPlugin.main);
         mWebView.setBackgroundColor(0x00000000);
+
+        // Resize webview
+        mView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            public void onGlobalLayout() {
+                resizeWebView();
+            }
+        });
+        frameLayoutParams = (LinearLayout.LayoutParams) mView.getLayoutParams();
+
         return mView;
     }
+
+    private void resizeWebView() {
+        int usableHeightNow = computeUsableHeight();
+        if (usableHeightNow != previousHeight) {
+            int usableHeightSansKeyboard = mView.getRootView().getHeight();
+            int heightDifference = usableHeightSansKeyboard - usableHeightNow;
+            if (heightDifference > (usableHeightSansKeyboard/4)) {
+                frameLayoutParams.height = usableHeightSansKeyboard - heightDifference;
+            } else {
+                frameLayoutParams.height = usableHeightSansKeyboard;
+            }
+            mView.requestLayout();
+            previousHeight = usableHeightNow;
+        }
+    }
+
+    private int computeUsableHeight() {
+        Rect r = new Rect();
+        mWebView.getWindowVisibleDisplayFrame(r);
+        return (r.bottom - r.top);
+    }
+
 
     @Override
     public boolean onBackPress() {

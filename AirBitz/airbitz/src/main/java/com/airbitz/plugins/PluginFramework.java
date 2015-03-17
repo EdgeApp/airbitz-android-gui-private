@@ -395,6 +395,9 @@ public class PluginFramework {
         mWebView.getSettings().setSaveFormData(false);
         mWebView.getSettings().setSavePassword(false);
         mWebView.getSettings().setSupportZoom(false);
+        mWebView.getSettings().setUseWideViewPort(true);
+        mWebView.getSettings().setLoadWithOverviewMode(true);
+        mWebView.setInitialScale(1);
         mWebView.clearFormData();
         mWebView.addJavascriptInterface(new PluginContext(this, plugin, handler), "_native");
     }
