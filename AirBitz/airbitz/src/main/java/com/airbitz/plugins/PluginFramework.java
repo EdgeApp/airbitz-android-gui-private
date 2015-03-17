@@ -72,7 +72,8 @@ public class PluginFramework {
     public interface UiHandler {
         public void showAlert(String title, String message);
         public void setTitle(String title);
-        public void launchSend(final String cbid, final String uuid, final String address, final long amountSatoshi,
+        public void launchSend(final String cbid, final String uuid, final String address,
+                               final long amountSatoshi, final double amountFiat,
                                final String label, final String category, final String notes);
         public void showNavBar();
         public void hideNavBar();
@@ -171,9 +172,9 @@ public class PluginFramework {
         String requestId;
         String address;
 
-        public PluginReceiveRequest(Wallet wallet, String name, String category, String notes) {
+        public PluginReceiveRequest(Wallet wallet, String name, String category, String notes, long amountSatoshi, double amountFiat) {
             CoreAPI api = CoreAPI.getApi();
-            requestId = api.createReceiveRequestFor(wallet, name, notes, category, 0.0, 0);
+            requestId = api.createReceiveRequestFor(wallet, name, notes, category, amountFiat, amountSatoshi);
             address = api.getRequestAddress(wallet.getUUID(), requestId);
         }
 
@@ -222,13 +223,14 @@ public class PluginFramework {
         @JavascriptInterface
         public void createReceiveRequest(final String cbid, final String walletUUID,
                                          final String name, final String category,
-                                         final String notes) {
+                                         final String notes, final long amountSatoshi,
+                                         final double amountFiat) {
             CallbackTask task = new CallbackTask(cbid, framework) {
                 @Override
                 public String doInBackground(Void... v) {
                     Wallet wallet = api.getWalletFromUUID(walletUUID);
                     if (null != wallet) {
-                        return jsonResult(new PluginReceiveRequest(wallet, name, category, notes)).toString();
+                        return jsonResult(new PluginReceiveRequest(wallet, name, category, notes, amountSatoshi, amountFiat)).toString();
                     } else {
                         return jsonError().toString();
                     }
@@ -239,8 +241,8 @@ public class PluginFramework {
 
         @JavascriptInterface
         public void requestSpend(String cbid, String uuid, String address, long amountSatoshi,
-                                 String label, String category, String notes) {
-            handler.launchSend(cbid, uuid, address, amountSatoshi, label, category, notes);
+                                 double amountFiat, String label, String category, String notes) {
+            handler.launchSend(cbid, uuid, address, amountSatoshi, amountFiat, label, category, notes);
         }
 
         @JavascriptInterface
