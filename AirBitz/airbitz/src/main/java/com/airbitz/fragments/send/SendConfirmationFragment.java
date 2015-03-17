@@ -698,7 +698,7 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
              Bundle bundle = new Bundle();
              bundle.putString(WalletsFragment.FROM_SOURCE, SuccessFragment.TYPE_SEND);
              mSuccessFragment.setArguments(bundle);
-             if (false && null != exitHandler) {
+             if (null != exitHandler) {
                 mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.MORE.ordinal());
              } else {
                 mActivity.pushFragment(mSuccessFragment, NavigationActivity.Tabs.SEND.ordinal());
@@ -1021,6 +1021,11 @@ public class SendConfirmationFragment extends BaseFragment implements Navigation
                     AudioPlayer.play(mActivity, R.raw.bitcoin_sent);
                     if (null != exitHandler) {
                         exitHandler.success(txResult.getTxId());
+                        mHandler.postDelayed(new Runnable() {
+                            public void run() {
+                                mActivity.popFragment(); // confirmation screen
+                            }
+                        }, 500);
                     } else {
                         mActivity.onSentFunds(mFromWallet.getUUID(), txResult.getTxId());
                     }

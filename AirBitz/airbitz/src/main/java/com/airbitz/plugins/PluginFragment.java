@@ -149,17 +149,22 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             return false;
         }
         if (mSendConfirmation != null) {
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    ((NavigationActivity) getActivity()).popFragment();
-                }
-            });
+            popFragment();
             mSendConfirmation = null;
         } else {
             mFramework.back();
         }
         return true;
     }
+
+    private void popFragment() {
+        getActivity().runOnUiThread(new Runnable() {
+            public void run() {
+                ((NavigationActivity) getActivity()).popFragment();
+            }
+        });
+    }
+
 
     private UiHandler handler = new UiHandler() {
         public void showAlert(final String title, final String message) {
