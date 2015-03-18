@@ -70,6 +70,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private Stack mNav;
 
     private int previousHeight;
+    private int mToolbarHeight;
     private LinearLayout.LayoutParams frameLayoutParams;
 
 
@@ -110,6 +111,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
         mWebView.loadUrl(mPlugin.main);
         mWebView.setBackgroundColor(0x00000000);
 
+        mToolbarHeight = getResources().getDimensionPixelSize(R.dimen.tabbar_height);
+
         // Resize webview
         mView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             public void onGlobalLayout() {
@@ -124,12 +127,12 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private void resizeWebView() {
         int usableHeightNow = computeUsableHeight();
         if (usableHeightNow != previousHeight) {
-            int usableHeightSansKeyboard = mView.getRootView().getHeight();
-            int heightDifference = usableHeightSansKeyboard - usableHeightNow;
-            if (heightDifference > (usableHeightSansKeyboard/4)) {
-                frameLayoutParams.height = usableHeightSansKeyboard - heightDifference;
+            int fullHeight = mView.getRootView().getHeight();
+            int heightDifference = fullHeight - usableHeightNow;
+            if (heightDifference > (fullHeight/4)) {
+                frameLayoutParams.height = fullHeight - heightDifference;
             } else {
-                frameLayoutParams.height = usableHeightSansKeyboard;
+                frameLayoutParams.height = fullHeight - mToolbarHeight;
             }
             mView.requestLayout();
             previousHeight = usableHeightNow;
@@ -138,8 +141,8 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
 
     private int computeUsableHeight() {
         Rect r = new Rect();
-        mWebView.getWindowVisibleDisplayFrame(r);
-        return (r.bottom - r.top);
+        mView.getWindowVisibleDisplayFrame(r);
+        return (r.bottom - r.top) - mToolbarHeight;
     }
 
 
