@@ -205,7 +205,7 @@ public class PluginFramework {
             CallbackTask task = new CallbackTask(cbid, framework) {
                 @Override
                 public String doInBackground(Void... v) {
-                    List<Wallet> coreWallets = api.getCoreWallets(false);
+                    List<Wallet> coreWallets = api.getCoreActiveWallets();
                     ToArray wallets = new ToArray();
                     try {
                         for (Wallet w : coreWallets) {
