@@ -132,7 +132,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             if (heightDifference > (fullHeight/4)) {
                 frameLayoutParams.height = fullHeight - heightDifference;
             } else {
-                frameLayoutParams.height = fullHeight - mToolbarHeight;
+                frameLayoutParams.height = fullHeight;
             }
             mView.requestLayout();
             previousHeight = usableHeightNow;
@@ -142,7 +142,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
     private int computeUsableHeight() {
         Rect r = new Rect();
         mView.getWindowVisibleDisplayFrame(r);
-        return (r.bottom - r.top) - mToolbarHeight;
+        return (r.bottom - r.top);
     }
 
 
