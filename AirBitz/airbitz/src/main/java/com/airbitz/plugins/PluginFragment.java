@@ -132,7 +132,7 @@ public class PluginFragment extends BaseFragment implements NavigationActivity.O
             if (heightDifference > (fullHeight/4)) {
                 frameLayoutParams.height = fullHeight - heightDifference;
             } else {
-                frameLayoutParams.height = fullHeight;
+                frameLayoutParams.height = -1;
             }
             mView.requestLayout();
             previousHeight = usableHeightNow;
