@@ -1,18 +1,18 @@
 /**
  * Copyright (c) 2014, Airbitz Inc
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms are permitted provided that 
+ *
+ * Redistribution and use in source and binary forms are permitted provided that
  * the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer. 
+ *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. Redistribution or use of modified source code requires the express written
  *    permission of Airbitz Inc.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,9 +23,9 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies, 
+ * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Airbitz Project.
  */
 
@@ -58,6 +58,7 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -75,8 +76,10 @@ import com.airbitz.fragments.BaseFragment;
 import com.airbitz.fragments.settings.twofactor.TwoFactorMenuFragment;
 import com.airbitz.objects.HighlightOnPressButton;
 import com.airbitz.objects.HighlightOnPressImageButton;
+import com.airbitz.utils.AccountDump;
 import com.airbitz.utils.Common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,10 +121,13 @@ public class LandingFragment extends BaseFragment implements
 
     private PINLoginTask mPINLoginTask;
     private PasswordLoginTask mPasswordLoginTask;
-    
+
     private CoreAPI mCoreAPI;
     private NavigationActivity mActivity;
     private Handler mHandler = new Handler();
+    private ImageView mLogo;
+    private Button mAccountPackage;
+    private int mAccountTaps;
 
     /**
      * Represents an asynchronous question fetch task
@@ -148,6 +154,26 @@ public class LandingFragment extends BaseFragment implements
         mDetailTextView.setTypeface(NavigationActivity.montserratRegularTypeFace);
 
         mSwipeLayout = (LinearLayout) mView.findViewById(R.id.fragment_landing_swipe_layout);
+
+        AccountDump.cleanUp(getActivity());
+        mAccountPackage = (Button) mView.findViewById(R.id.account_package);
+        mAccountPackage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AccountDump.shareAccountData(getActivity());
+            }
+        });
+
+        mAccountTaps = 0;
+        mLogo = (ImageView) mView.findViewById(R.id.fragment_landing_logo_imageview);
+        mLogo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (++mAccountTaps >= 5) {
+                    mAccountPackage.setVisibility(View.VISIBLE);
+                }
+            }
+        });
 
         mUserNameEditText = (EditText) mView.findViewById(R.id.fragment_landing_username_edittext);
         mUserNameEditText.setTypeface(NavigationActivity.helveticaNeueTypeFace);

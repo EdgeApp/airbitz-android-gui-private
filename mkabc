@@ -17,15 +17,13 @@ if [[ ! -n $(which swig) ]]; then
     exit 1
 fi
 
-make abc.clean abc.build-android-arm  abc.build-android-x86
+make abc.clean abc.build-android-arm
 
 mkdir -p $WALLET_MAIN/jni/
 mkdir -p $WALLET_MAIN/jniLibs/armeabi/
-mkdir -p $WALLET_MAIN/jniLibs/x86/
 
 cp ../src/ABC.h $WALLET_MAIN/jni/
 cp build/abc/android-arm/libabc.so $WALLET_MAIN/jniLibs/armeabi/
-cp build/abc/android-x86/libabc.so $WALLET_MAIN/jniLibs/x86/
 
 cd $WALLET_PATH
 swig -java -package com.airbitz.api \
@@ -35,5 +33,4 @@ cd src/main/jni/
 ndk-build
 
 cp ../libs/armeabi/libairbitz.so ../jniLibs/armeabi/
-cp ../libs/x86/libairbitz.so ../jniLibs/x86/
 

@@ -125,4 +125,24 @@
         <item name="android:background">@drawable/emboss_down</item>
     </style>
 
+    <style name="LandingButton" parent="BlackDropShadow">
+        <item name="android:layout_margin">5dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
+        <item name="android:background">@drawable/bg_button_red</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">15dp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="RedButton" parent="LandingButton">
+        <item name="android:background">@drawable/bg_button_red</item>
+    </style>
+
+    <style name="GreenButton" parent="LandingButton">
+        <item name="android:background">@drawable/bg_button_green</item>
+    </style>
+
 </resources>
