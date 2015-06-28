@@ -7,6 +7,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/postcard_mountain"
+        android:scaleType="centerCrop" />
+
     <android.support.v4.widget.DrawerLayout
         android:id="@+id/activityDrawer"
         android:layout_width="match_parent"
