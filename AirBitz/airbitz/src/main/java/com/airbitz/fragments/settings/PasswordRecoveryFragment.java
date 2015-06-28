@@ -31,7 +31,6 @@
 
 package com.airbitz.fragments.settings;
 
-import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
@@ -40,23 +39,17 @@ import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -543,7 +536,7 @@ public class PasswordRecoveryFragment extends BaseFragment implements
         bundle.putString(TwoFactorMenuFragment.USERNAME, getArguments().getString(USERNAME));
         fragment.setArguments(bundle);
         mActivity.pushFragment(fragment);
-        mActivity.DisplayLoginOverlay(false);
+        mActivity.updateViewPager();
     }
 
     @Override

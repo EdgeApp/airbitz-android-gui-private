@@ -94,10 +94,11 @@ public abstract class FragmentPagerAdapter extends PagerAdapter {
         // Do we already have this fragment?
         String name = makeFragmentName(container.getId(), position);
         Fragment fragment = mFragmentManager.findFragmentByTag(name);
-        if (fragment != null) {
-            if (DEBUG) Log.v(TAG, "Attaching item #" + position + ": f=" + fragment);
-            mCurTransaction.attach(fragment);
-        } else {
+//        if (fragment != null) {
+//            if (DEBUG) Log.v(TAG, "Attaching item #" + position + ": f=" + fragment);
+//            mCurTransaction.attach(fragment);
+//        } else
+        {
             fragment = getItem(position);
             if (DEBUG) Log.v(TAG, "Adding item #" + position + ": f=" + fragment);
             mCurTransaction.add(container.getId(), fragment,

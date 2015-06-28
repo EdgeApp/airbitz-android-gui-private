@@ -54,8 +54,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -714,12 +712,12 @@ public class LandingFragment extends BaseFragment implements
         bundle.putString(TwoFactorMenuFragment.USERNAME, mUsername);
         fragment.setArguments(bundle);
         mActivity.pushFragment(fragment);
-        mActivity.DisplayLoginOverlay(false);
+        mActivity.updateViewPager();
     }
 
     @Override
     public void onTwoFactorMenuResult(boolean success, String secret) {
-        mActivity.DisplayLoginOverlay(true);
+        mActivity.updateViewPager();
         if(success) {
             twoFactorSignIn(secret);
         }
