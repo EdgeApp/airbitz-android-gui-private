@@ -1773,12 +1773,18 @@ public class CoreAPI {
 
     private tABC_TxDetails mReceiveRequestDetails;
     public String createReceiveRequestFor(Wallet wallet, String name, String notes, long satoshi) {
+        if (null == wallet) {
+            return null;
+        }
         double value = SatoshiToCurrency(satoshi, wallet.getCurrencyNum());
         return createReceiveRequestFor(wallet, name, notes, "", value, satoshi);
     }
 
     public String createReceiveRequestFor(Wallet wallet, String name, String notes, String category, double value, long satoshi) {
         //first need to create a transaction details struct
+        if (null == wallet) {
+            return null;
+        }
 
         //creates a receive request.  Returns a requestID.  Caller must free this ID when done with it
         tABC_TxDetails details = new tABC_TxDetails();

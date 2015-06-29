@@ -249,7 +249,7 @@ public class NavigationActivity extends ActionBarActivity
         for (int i = 0; i < Tabs.NUM_STACKS.ordinal(); i++) {
             mNavStacks[i] = new Stack<Fragment>();
         }
-        resetAllStacks(true);
+        initAllStacks();
 
         // for keyboard hide and show
         final View activityRootView = findViewById(R.id.activity_navigation_root);
@@ -452,7 +452,10 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     public void pushFragment(Fragment fragment, int threadID) {
-        Fragment oldFragment = mNavStacks[threadID].peek();
+        Fragment oldFragment = null;
+        if (mNavStacks[threadID].size() > 0) {
+            oldFragment = mNavStacks[threadID].peek();
+        }
         mViewPager.setAdapter(null);
         mNavStacks[threadID].push(fragment);
         mViewPager.setAdapter(mPageAdapter);
@@ -460,18 +463,22 @@ public class NavigationActivity extends ActionBarActivity
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
-            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-            if (mNavStacks[threadID].size() != 0) {
-                transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
-            }
-            transaction.remove(oldFragment);
-            transaction.replace(R.id.navigation_view_pager, fragment);
-            transaction.commitAllowingStateLoss();
+//            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//            if (mNavStacks[threadID].size() != 0) {
+//                transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
+//            }
+//            if (null != oldFragment) transaction.detach(oldFragment);
+//
+//            transaction.replace(R.id.navigation_view_pager, fragment);
+//            transaction.commitAllowingStateLoss();
         }
     }
 
     public void pushFragmentNoAnimation(Fragment fragment, int threadID) {
-        Fragment oldFragment = mNavStacks[threadID].peek();
+        Fragment oldFragment = null;
+        if (mNavStacks[threadID].size() > 0) {
+            oldFragment = mNavStacks[threadID].peek();
+        }
         mViewPager.setAdapter(null);
         mNavStacks[threadID].push(fragment);
         mViewPager.setAdapter(mPageAdapter);
@@ -479,10 +486,10 @@ public class NavigationActivity extends ActionBarActivity
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
-            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-            transaction.remove(oldFragment);
-            transaction.replace(R.id.navigation_view_pager, fragment);
-            transaction.commitAllowingStateLoss();
+//            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//            if (null != oldFragment) transaction.detach(oldFragment);
+//            transaction.replace(R.id.navigation_view_pager, fragment);
+//            transaction.commitAllowingStateLoss();
         }
         getFragmentManager().executePendingTransactions();
     }
@@ -503,25 +510,50 @@ public class NavigationActivity extends ActionBarActivity
 //        transaction.commitAllowingStateLoss();
 //    }
 //
+
     public void popFragment() {
-        Fragment oldFragment = mNavStacks[mNavThreadId].peek();
+        popFragment(mNavThreadId);
+    }
+
+    public void popFragment(int threadID) {
+        Fragment oldFragment = mNavStacks[threadID].peek();
         hideSoftKeyboard(mFragmentLayout);
 
         mViewPager.setAdapter(null);
-        mNavStacks[mNavThreadId].pop();
+        mNavStacks[threadID].pop();
         mViewPager.setAdapter(mPageAdapter);
 
         getFragmentManager().executePendingTransactions();
         updateViewPager(true);
 
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//
+//        if (mNavStacks[threadID].size() != 0) {
+//            transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
+//        }
+//        transaction.remove(oldFragment);
+//        if (mNavStacks[threadID].size() > 0)
+//            transaction.replace(R.id.navigation_view_pager, mNavStacks[threadID].peek());
+//
+//        transaction.commitAllowingStateLoss();
+    }
 
-        if (mNavStacks[mNavThreadId].size() != 0) {
-            transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
+    public void swapFragment (Fragment fragment, int threadID) {
+        Fragment oldFragment = null;
+        mViewPager.setAdapter(null);
+        if (mNavStacks[threadID].size() > 0) {
+            oldFragment = mNavStacks[threadID].peek();
+            mNavStacks[threadID].pop();
         }
-        transaction.remove(oldFragment);
-        transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
-        transaction.commitAllowingStateLoss();
+        mNavStacks[threadID].push(fragment);
+        mViewPager.setAdapter(mPageAdapter);
+
+        // Only show visually if we're displaying the thread
+//        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+//        if (null != oldFragment) transaction.remove(oldFragment);
+//
+//        transaction.replace(R.id.navigation_view_pager, fragment);
+//        transaction.commitAllowingStateLoss();
     }
 
     private ViewGroup.LayoutParams getFragmentLayoutParams() {
@@ -689,11 +721,9 @@ public class NavigationActivity extends ActionBarActivity
         switchFragmentThread(Tabs.WALLET.ordinal());
     }
 
-    public void clearBD() {
-        Fragment top = mNavStacks[Tabs.BD.ordinal()].peek();
-        while (!(top instanceof BusinessDirectoryFragment)) {
-            mNavStacks[Tabs.BD.ordinal()].pop();
-            top = mNavStacks[Tabs.BD.ordinal()].peek();
+    public void clearStack(int index) {
+        while (mNavStacks[index].size() > 0) {
+            popFragment(index);
         }
     }
 
@@ -1025,8 +1055,25 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     public void resetFragmentThreadToBaseFragment(int threadId, boolean bLandingMode) {
-        mNavStacks[threadId].clear();
-        mNavStacks[threadId].add(getNewBaseFragement(threadId, bLandingMode));
+
+        while (mNavStacks[threadId].size() > 1) {
+            popFragment(threadId);
+        }
+
+        if (mNavStacks[threadId].size() == 0) {
+            pushFragment(getNewBaseFragement(threadId, bLandingMode));
+        }
+
+        // the LOGIN and Request fragments share the same spot in the ViewPager.
+        // Make sure the right one is loaded
+        if (threadId == ePagerLanding.LOGIN.ordinal()) {
+            if (bLandingMode && (!(mNavStacks[threadId].peek() instanceof LandingFragment))) {
+                swapFragment(mLandingFragment, threadId);
+            } else if (!bLandingMode && (!(mNavStacks[threadId].peek() instanceof RequestFragment))) {
+                swapFragment(mRequestFragment, threadId);
+            }
+        }
+
     }
 
     private void showIncomingBitcoinDialog() {
@@ -1202,6 +1249,12 @@ public class NavigationActivity extends ActionBarActivity
     private void resetAllStacks(boolean bLandingMode) {
         for(int i=0; i<Tabs.NUM_STACKS.ordinal(); i++) {
             resetFragmentThreadToBaseFragment(i, bLandingMode);
+        }
+    }
+
+    private void initAllStacks() {
+        for(int i=0; i<Tabs.NUM_STACKS.ordinal(); i++) {
+            mNavStacks[i].push(getNewBaseFragement(i, true));
         }
     }
 

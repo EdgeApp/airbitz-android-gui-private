@@ -601,7 +601,7 @@ public class SignUpFragment extends BaseFragment implements NavigationActivity.O
                     mCoreAPI.SetPin(mPin);
                     mCoreAPI.PinSetup();
                     mActivity.UserJustLoggedIn(false);
-                    mActivity.clearBD();
+                    mActivity.clearStack(NavigationActivity.Tabs.BD.ordinal());
                     mActivity.switchFragmentThread(NavigationActivity.Tabs.MORE.ordinal());
                 } else {
                     ShowMessageDialogChangeSuccess(getResources().getString(R.string.activity_signup_pin_change_title), getResources().getString(R.string.activity_signup_pin_change_good));
