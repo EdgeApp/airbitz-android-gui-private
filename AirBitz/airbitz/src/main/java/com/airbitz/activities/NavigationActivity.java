@@ -58,6 +58,7 @@ import android.os.Handler;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v13.app.FragmentPagerAdapter;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
@@ -82,11 +83,9 @@ import android.widget.TextView;
 import com.airbitz.AirbitzApplication;
 import com.airbitz.R;
 import com.airbitz.adapters.AccountsAdapter;
-import com.airbitz.adapters.NavigationAdapter;
 import com.airbitz.api.AirbitzAPI;
 import com.airbitz.api.CoreAPI;
 import com.airbitz.api.tABC_AccountSettings;
-import com.airbitz.fragments.HelpFragment;
 import com.airbitz.fragments.NavigationBarFragment;
 import com.airbitz.fragments.directory.BusinessDirectoryFragment;
 import com.airbitz.fragments.directory.DirectoryDetailFragment;
@@ -221,6 +220,7 @@ public class NavigationActivity extends ActionBarActivity
     private ListView mOtherAccountsListView;
     private AccountsAdapter mOtherAccountsAdapter;
     private List<String> mOtherAccounts;
+    private NavigationAdapter mPageAdapter;
 
     private RememberPasswordCheck mPasswordCheck;
 
@@ -237,6 +237,7 @@ public class NavigationActivity extends ActionBarActivity
 
         setTypeFaces();
 
+        mLandingModeEnable = true;
         for (int i = 0; i < Tabs.NUM_STACKS.ordinal(); i++) {
             mNavStacks[i] = new Stack<Fragment>();
         }
@@ -274,12 +275,37 @@ public class NavigationActivity extends ActionBarActivity
             }
         });
 
+        mNavBarFragment = (NavigationBarFragment) getFragmentManager().findFragmentById(R.id.navigationFragment);
+
+        mOverlayFragments.clear();
+
         // Setup top screen - the Landing - that swipes away if no login
         mViewPager = (ViewPager) findViewById(R.id.navigation_view_pager);
         mViewPager.setVisibility(View.VISIBLE);
-        updateViewPager(true, ePagerLogin.LOGIN.ordinal(),false);
 
-        mNavBarFragment = (NavigationBarFragment) getFragmentManager().findFragmentById(R.id.navigationFragment);
+        mPageAdapter = new NavigationAdapter(getFragmentManager());
+        mViewPager.setAdapter(mPageAdapter);
+        mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+
+            public void onPageScrollStateChanged(int state) {
+            }
+
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                hideSoftKeyboard(mNavBarFragmentLayout);
+            }
+
+            public void onPageSelected(int position) {
+                hideSoftKeyboard(mNavBarFragmentLayout);
+                if (mLandingModeEnable && position != ePagerLanding.BD.ordinal())
+                    hideNavBar();
+                else
+                    showNavBar();
+
+                switchFragmentThread(position, true);
+            }
+        });
+
+        updateViewPager(true, ePagerLanding.LOGIN.ordinal(),false);
 
         // Navigation Drawer slideout
         setupDrawer();
@@ -310,9 +336,6 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     public void setViewPagerPosition(int position) {
-        if (mLandingModeEnable) {
-            assert(position <= ePagerLogin.LOGIN.ordinal());
-        }
         mViewPager.setCurrentItem(position, true);
     }
 
@@ -326,45 +349,20 @@ public class NavigationActivity extends ActionBarActivity
 
     public void updateViewPager(boolean bLandingMode, int position, boolean animate) {
 
-        mOverlayFragments.clear();
+//        List<Fragment> overlayFragments = new ArrayList<Fragment>();
+//
         Fragment fragment;
 
-        if (mLandingModeEnable != bLandingMode)
+        if (mLandingModeEnable != bLandingMode) {
+            mViewPager.setAdapter(null);
             resetAllStacks(bLandingMode);
-
-        if (bLandingMode) {
-            // Loop across the 2 positions
-            for (int i = ePagerLogin.BDL.ordinal(); i <= ePagerLogin.LOGIN.ordinal(); i++) {
-                fragment = mNavStacks[i].peek();
-                mOverlayFragments.add(fragment);
-            }
-            mLandingModeEnable = true;
-        } else {
-            // Loop across the 5 positions
-            for (int i = Tabs.BD.ordinal(); i <= Tabs.WALLET.ordinal(); i++) {
-                fragment = mNavStacks[i].peek();
-                mOverlayFragments.add(fragment);
-            }
-            mLandingModeEnable = false;
+            mViewPager.setAdapter(mPageAdapter);
+            mLandingModeEnable = bLandingMode;
         }
 
-        NavigationAdapter pageAdapter = new NavigationAdapter(getFragmentManager(), mOverlayFragments);
-        mViewPager.setAdapter(pageAdapter);
-        mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-
-            public void onPageScrollStateChanged(int state) {
-            }
-
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                hideSoftKeyboard(mNavBarFragmentLayout);
-            }
-
-            public void onPageSelected(int position) {
-                hideSoftKeyboard(mNavBarFragmentLayout);
-            }
-        });
-
+        mPageAdapter.notifyDataSetChanged();
         mViewPager.setCurrentItem(position, true);
+
     }
 
 
@@ -406,17 +404,23 @@ public class NavigationActivity extends ActionBarActivity
                 mNavBarFragment.unselectTab(position);
                 mNavBarFragment.unselectTab(Tabs.BD.ordinal()); // to reset mLastTab
                 mNavBarFragment.selectTab(Tabs.BD.ordinal());
-                updateViewPager(true, ePagerLogin.LOGIN.ordinal(), true);
+                updateViewPager(true, ePagerLanding.LOGIN.ordinal(), true);
             }
         }
     }
-
     public void switchFragmentThread(int id) {
+        switchFragmentThread(id, false);
+    }
+
+    public void switchFragmentThread(int id, boolean bSetNavBarOnly) {
         if (mNavBarFragmentLayout.getVisibility() != View.VISIBLE && AirbitzApplication.isLoggedIn()) {
             showNavBar();
         }
 
-        setViewPagerPosition(id);
+        if (!bSetNavBarOnly) {
+            setViewPagerPosition(id);
+
+        }
 
         mNavBarFragment.unselectTab(mNavThreadId);
         mNavBarFragment.unselectTab(id); // just needed for resetting mLastTab
@@ -438,8 +442,8 @@ public class NavigationActivity extends ActionBarActivity
     public void pushFragment(Fragment fragment, FragmentTransaction transaction) {
         mNavStacks[mNavThreadId].push(fragment);
         updateViewPager(true);
-//        transaction.replace(R.id.activityLayout, fragment);
-//        transaction.commitAllowingStateLoss();
+        transaction.replace(R.id.navigation_view_pager, fragment);
+        transaction.commitAllowingStateLoss();
     }
 
     public void pushFragment(Fragment fragment) {
@@ -452,12 +456,12 @@ public class NavigationActivity extends ActionBarActivity
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
-//            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-//            if (mNavStacks[threadID].size() != 0) {
-//                transaction.setCustomAnimations(R.animator.fade_in, 0);
-//            }
-//            transaction.replace(R.id.activityLayout, fragment);
-//            transaction.commitAllowingStateLoss();
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            if (mNavStacks[threadID].size() != 0) {
+                transaction.setCustomAnimations(R.animator.fade_in, 0);
+            }
+            transaction.replace(R.id.navigation_view_pager, fragment);
+            transaction.commitAllowingStateLoss();
         }
     }
 
@@ -467,11 +471,11 @@ public class NavigationActivity extends ActionBarActivity
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
-//            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-//            transaction.replace(R.id.activityLayout, fragment);
-//            transaction.commitAllowingStateLoss();
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.replace(R.id.navigation_view_pager, fragment);
+            transaction.commitAllowingStateLoss();
         }
-//        getFragmentManager().executePendingTransactions();
+        getFragmentManager().executePendingTransactions();
     }
 
     public void popFragment(FragmentTransaction transaction) {
@@ -479,22 +483,22 @@ public class NavigationActivity extends ActionBarActivity
         Fragment fragment = mNavStacks[mNavThreadId].pop();
         getFragmentManager().executePendingTransactions();
         updateViewPager(true);
-//
-//        transaction.replace(R.id.activityLayout, mNavStacks[mNavThreadId].peek());
-//        transaction.commitAllowingStateLoss();
+
+        transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
+        transaction.commitAllowingStateLoss();
     }
 
     public void popFragment() {
         hideSoftKeyboard(mFragmentLayout);
         Fragment fragment = mNavStacks[mNavThreadId].pop();
         updateViewPager(true);
-//        getFragmentManager().executePendingTransactions();
-//        FragmentTransaction transaction = getFragmentManager().beginTransaction();
-//        if (mNavStacks[mNavThreadId].size() != 0) {
-//            transaction.setCustomAnimations(0, R.animator.fade_out);
-//        }
-//        transaction.replace(R.id.activityLayout, mNavStacks[mNavThreadId].peek());
-//        transaction.commitAllowingStateLoss();
+        getFragmentManager().executePendingTransactions();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mNavStacks[mNavThreadId].size() != 0) {
+            transaction.setCustomAnimations(0, R.animator.fade_out);
+        }
+        transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
+        transaction.commitAllowingStateLoss();
     }
 
     private ViewGroup.LayoutParams getFragmentLayoutParams() {
@@ -588,8 +592,8 @@ public class NavigationActivity extends ActionBarActivity
         mNavThreadId = AirbitzApplication.getLastNavTab();
 
         if (loginExpired() || !AirbitzApplication.isLoggedIn()) {
-            mNavThreadId = Tabs.BD.ordinal();
-            this.updateViewPager(true, ePagerLogin.LOGIN.ordinal(),false);
+            mNavThreadId = ePagerLanding.LOGIN.ordinal();
+            this.updateViewPager(true, mNavThreadId, false);
         } else {
             this.updateViewPager(false, mNavThreadId, false);
             mCoreAPI.restoreConnectivity();
@@ -1054,6 +1058,7 @@ public class NavigationActivity extends ActionBarActivity
         checkDailyLimitPref();
         mCoreAPI.setupAccountSettings();
         mCoreAPI.startAllAsyncUpdates();
+        this.updateViewPager(false, Tabs.WALLET.ordinal(),true);
         if (mDataUri != null) {
             processUri(mDataUri);
             mDataUri = null;
@@ -1067,7 +1072,6 @@ public class NavigationActivity extends ActionBarActivity
         if(!mCoreAPI.coreSettings().getBDisablePINLogin() && passwordLogin) {
             mCoreAPI.PinSetup();
         }
-        this.updateViewPager(false, Tabs.WALLET.ordinal(),true);
 
         boolean checkPassword = false;
         // if the user has a password, increment PIN login count
@@ -1149,7 +1153,9 @@ public class NavigationActivity extends ActionBarActivity
             transaction.commitAllowingStateLoss();
         }
         mHandler.postDelayed(mAttemptLogout, 100);
+        mViewPager.setAdapter(null);
         resetAllStacks(true);
+        mViewPager.setAdapter(mPageAdapter);
         this.updateViewPager(true);
 
         AirbitzApplication.Logout();
@@ -1239,7 +1245,7 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     public enum Tabs {BD, REQUEST, SEND, WALLET, MORE, NUM_STACKS}
-    public enum ePagerLogin {BDL, LOGIN, BDR}
+    public enum ePagerLanding {BD, LOGIN}
 
     //************************ Connectivity support
 
@@ -2089,5 +2095,89 @@ public class NavigationActivity extends ActionBarActivity
                         });
         AlertDialog confirmDialog = builder.create();
         confirmDialog.show();
+    }
+
+    public class NavigationAdapter extends FragmentPagerAdapter
+    {
+        private final FragmentManager mFragmentManager;
+
+        public NavigationAdapter(FragmentManager fm)
+        {
+            super(fm);
+            mFragmentManager = fm;
+        }
+
+        @Override public Fragment getItem(int position)
+        {
+            Fragment newFragment, currentFragment;
+
+            if (mOverlayFragments.size() > position) {
+                newFragment = mNavStacks[position].peek();
+                currentFragment = mOverlayFragments.get(position);
+                if (newFragment != currentFragment) {
+                    mOverlayFragments.set(position, newFragment);
+                    notifyDataSetChanged();
+                }
+                return newFragment;
+            } else {
+                mOverlayFragments.clear();
+
+                // Loop across the 5 positions
+                for (int i = 0; i < Tabs.NUM_STACKS.ordinal(); i++) {
+                    newFragment = mNavStacks[i].peek();
+                    mOverlayFragments.add(newFragment);
+                }
+                notifyDataSetChanged();
+                return mOverlayFragments.get(position);
+            }
+
+
+
+//            if (position == 0)
+//            {
+//                if (mFragmentAtPos0 == null)
+//                {
+//                    mFragmentAtPos0 = FirstPageFragment.newInstance(new FirstPageFragmentListener()
+//                    {
+//                        public void onSwitchToNextFragment()
+//                        {
+//                            mFragmentManager.beginTransaction().remove(mFragmentAtPos0).commit();
+//                            mFragmentAtPos0 = NextFragment.newInstance();
+//                            notifyDataSetChanged();
+//                        }
+//                    });
+//                }
+//                return mFragmentAtPos0;
+//            }
+//            else
+//                return SecondPageFragment.newInstance();
+        }
+
+        @Override
+        public int getCount()
+        {
+            if (mLandingModeEnable) {
+                return 2;
+            } else {
+                return Tabs.NUM_STACKS.ordinal();
+            }
+        }
+
+        @Override
+        public int getItemPosition(Object object)
+        {
+            for (int i = 0; i < Tabs.NUM_STACKS.ordinal(); i++) {
+                if ( mNavStacks[i].peek() == object ) {
+                    return i;
+                }
+            }
+
+            return POSITION_NONE;
+        }
+    }
+
+    public interface FirstPageFragmentListener
+    {
+        void onSwitchToNextFragment();
     }
 }
