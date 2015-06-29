@@ -394,6 +394,8 @@ public class RequestFragment extends WalletBaseFragment implements
     }
 
     private void updateConversion() {
+        if (null == mWallet) return;
+
         if (mAmountIsBitcoin) {
             long satoshi = mCoreAPI.denominationToSatoshi(mAmountField.getText().toString());
             String currency = mCoreAPI.FormatCurrency(mAmountSatoshi, mWallet.getCurrencyNum(), false, false);
@@ -424,6 +426,8 @@ public class RequestFragment extends WalletBaseFragment implements
     }
 
     private void updateAmount() {
+        if (null == mWallet) return;
+
         Wallet wallet = mWallet;
         if (mAmountIsBitcoin) {
             String bitcoin = mAmountField.getText().toString();
@@ -509,6 +513,8 @@ public class RequestFragment extends WalletBaseFragment implements
 
     @Override
     public void onWalletsLoaded() {
+        if (null == mWallet) return;
+
         super.onWalletsLoaded();
 
         mAutoUpdatingTextFields = true;
@@ -821,6 +827,8 @@ public class RequestFragment extends WalletBaseFragment implements
 
         @Override
         protected Boolean doInBackground(Void... params) {
+            if (null == mWallet) return false;
+
             Log.d(TAG, "Starting Receive Request at:" + System.currentTimeMillis());
             if(mID == null) {
                 mID = mCoreAPI.createReceiveRequestFor(mWallet, "", "", mAmountSatoshi);
@@ -855,7 +863,8 @@ public class RequestFragment extends WalletBaseFragment implements
                         mQRView.setImageBitmap(mQRBitmap);
                         mQRProgress.setVisibility(View.GONE);
                     }
-                    mCoreAPI.prioritizeAddress(mAddress, mWallet.getUUID());
+                    if (mWallet != null)
+                        mCoreAPI.prioritizeAddress(mAddress, mWallet.getUUID());
                 }
             }
         }
@@ -1137,6 +1146,8 @@ public class RequestFragment extends WalletBaseFragment implements
     }
 
     private void swapAmount() {
+        if (null == mWallet) return;
+
         mAmountIsBitcoin = !mAmountIsBitcoin;
         if (mAmountIsBitcoin) {
             String fiat = mAmountField.getText().toString();
