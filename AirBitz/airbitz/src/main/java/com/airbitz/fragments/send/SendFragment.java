@@ -155,7 +155,7 @@ public class SendFragment extends WalletBaseFragment implements
 //        mHelpButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
-//                mActivity.pushFragment(new HelpFragment(HelpFragment.SEND), NavigationActivity.Tabs.SEND.ordinal());
+//                mActivity.pushFragmentWithTransaction(new HelpFragment(HelpFragment.SEND), NavigationActivity.Tabs.SEND.ordinal());
 //            }
 //        });
 

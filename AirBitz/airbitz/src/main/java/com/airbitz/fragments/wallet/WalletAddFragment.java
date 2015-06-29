@@ -235,17 +235,11 @@ public class WalletAddFragment extends BaseFragment
     }
 
     public static void pushFragment(NavigationActivity mActivity) {
-        FragmentTransaction transaction = mActivity.getFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
-
         Fragment fragment = new WalletAddFragment();
-        mActivity.pushFragment(fragment, transaction);
+        mActivity.pushFragment(fragment);
     }
 
     public static void popFragment(NavigationActivity mActivity) {
-        FragmentTransaction transaction = mActivity.getFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
-
-        mActivity.popFragment(transaction);
+        mActivity.popFragment();
     }
 }

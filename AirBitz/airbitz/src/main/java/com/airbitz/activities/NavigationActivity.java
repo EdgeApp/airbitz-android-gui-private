@@ -58,7 +58,6 @@ import android.os.Handler;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v13.app.FragmentPagerAdapter;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
@@ -83,6 +82,7 @@ import android.widget.TextView;
 import com.airbitz.AirbitzApplication;
 import com.airbitz.R;
 import com.airbitz.adapters.AccountsAdapter;
+import com.airbitz.adapters.FragmentPagerAdapter;
 import com.airbitz.api.AirbitzAPI;
 import com.airbitz.api.CoreAPI;
 import com.airbitz.api.tABC_AccountSettings;
@@ -192,6 +192,14 @@ public class NavigationActivity extends ActionBarActivity
     private boolean mLandingModeEnable;
     private Stack<Fragment>[] mNavStacks = new Stack[Tabs.NUM_STACKS.ordinal()];
     private List<Fragment> mOverlayFragments = new ArrayList<Fragment>();
+
+    private BusinessDirectoryFragment mBusinessDirectoryFragment    = new BusinessDirectoryFragment();
+    private LandingFragment mLandingFragment                        = new LandingFragment();
+    private SendFragment mSendFragment                              = new SendFragment();
+    private RequestFragment mRequestFragment                        = new RequestFragment();
+    private TransactionListFragment mTransactionListFragment        = new TransactionListFragment();
+    private SettingFragment mSettingFragment                        = new SettingFragment();
+
     // Callback interface when a wallet could be updated
     private OnWalletUpdated mOnWalletUpdated;
     private AlertDialog mIncomingDialog;
@@ -439,64 +447,79 @@ public class NavigationActivity extends ActionBarActivity
         switchFragmentThread(id);
     }
 
-    public void pushFragment(Fragment fragment, FragmentTransaction transaction) {
-        mNavStacks[mNavThreadId].push(fragment);
-        updateViewPager(true);
-        transaction.replace(R.id.navigation_view_pager, fragment);
-        transaction.commitAllowingStateLoss();
-    }
-
     public void pushFragment(Fragment fragment) {
         pushFragment(fragment, mNavThreadId);
     }
 
     public void pushFragment(Fragment fragment, int threadID) {
+        Fragment oldFragment = mNavStacks[threadID].peek();
+        mViewPager.setAdapter(null);
         mNavStacks[threadID].push(fragment);
+        mViewPager.setAdapter(mPageAdapter);
 
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
             if (mNavStacks[threadID].size() != 0) {
-                transaction.setCustomAnimations(R.animator.fade_in, 0);
+                transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
             }
+            transaction.remove(oldFragment);
             transaction.replace(R.id.navigation_view_pager, fragment);
             transaction.commitAllowingStateLoss();
         }
     }
 
     public void pushFragmentNoAnimation(Fragment fragment, int threadID) {
+        Fragment oldFragment = mNavStacks[threadID].peek();
+        mViewPager.setAdapter(null);
         mNavStacks[threadID].push(fragment);
+        mViewPager.setAdapter(mPageAdapter);
 
         // Only show visually if we're displaying the thread
         if (mNavThreadId == threadID) {
             updateViewPager(true);
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
+            transaction.remove(oldFragment);
             transaction.replace(R.id.navigation_view_pager, fragment);
             transaction.commitAllowingStateLoss();
         }
         getFragmentManager().executePendingTransactions();
     }
 
-    public void popFragment(FragmentTransaction transaction) {
-        hideSoftKeyboard(mFragmentLayout);
-        Fragment fragment = mNavStacks[mNavThreadId].pop();
-        getFragmentManager().executePendingTransactions();
-        updateViewPager(true);
-
-        transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
-        transaction.commitAllowingStateLoss();
-    }
-
+//    public void popFragment(FragmentTransaction transaction) {
+//        Fragment oldFragment = mNavStacks[mNavThreadId].peek();
+//        hideSoftKeyboard(mFragmentLayout);
+//
+//        mViewPager.setAdapter(null);
+//        mNavStacks[mNavThreadId].pop();
+//        mViewPager.setAdapter(mPageAdapter);
+//
+//        getFragmentManager().executePendingTransactions();
+//        updateViewPager(true);
+//
+//        transaction.remove(oldFragment);
+//        transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
+//        transaction.commitAllowingStateLoss();
+//    }
+//
     public void popFragment() {
+        Fragment oldFragment = mNavStacks[mNavThreadId].peek();
         hideSoftKeyboard(mFragmentLayout);
-        Fragment fragment = mNavStacks[mNavThreadId].pop();
-        updateViewPager(true);
+
+        mViewPager.setAdapter(null);
+        mNavStacks[mNavThreadId].pop();
+        mViewPager.setAdapter(mPageAdapter);
+
         getFragmentManager().executePendingTransactions();
+        updateViewPager(true);
+
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
+
         if (mNavStacks[mNavThreadId].size() != 0) {
-            transaction.setCustomAnimations(0, R.animator.fade_out);
+            transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
         }
+        transaction.remove(oldFragment);
         transaction.replace(R.id.navigation_view_pager, mNavStacks[mNavThreadId].peek());
         transaction.commitAllowingStateLoss();
     }
@@ -1185,18 +1208,18 @@ public class NavigationActivity extends ActionBarActivity
     private Fragment getNewBaseFragement(int id, boolean bLandingMode) {
         switch (id) {
             case 0:
-                return new BusinessDirectoryFragment();
+                return mBusinessDirectoryFragment;
             case 1:
                 if (bLandingMode)
-                    return new LandingFragment();
+                    return mLandingFragment;
                 else
-                    return new RequestFragment();
+                    return mRequestFragment;
             case 2:
-                return new SendFragment();
+                return mSendFragment;
             case 3:
-                return new TransactionListFragment();
+                return mTransactionListFragment;
             case 4:
-                return new SettingFragment();
+                return mSettingFragment;
             default:
                 return null;
         }

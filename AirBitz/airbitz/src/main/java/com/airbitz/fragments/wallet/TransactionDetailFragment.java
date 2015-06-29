@@ -577,7 +577,7 @@ public class TransactionDetailFragment extends BaseFragment
         // mHelpButton.setOnClickListener(new View.OnClickListener() {
         //     @Override
         //     public void onClick(View view) {
-        //         ((NavigationActivity) getActivity()).pushFragment(new HelpFragment(HelpFragment.TRANSACTION_DETAILS), NavigationActivity.Tabs.WALLET.ordinal());
+        //         ((NavigationActivity) getActivity()).pushFragmentWithTransaction(new HelpFragment(HelpFragment.TRANSACTION_DETAILS), NavigationActivity.Tabs.WALLET.ordinal());
         //     }
         // });
 
