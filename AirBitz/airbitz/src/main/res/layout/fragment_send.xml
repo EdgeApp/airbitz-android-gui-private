@@ -3,6 +3,7 @@
     android:id="@+id/layout_root"
     xmlns:segmentedgroup="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:background="@color/dark_frost"
     android:layout_height="match_parent">
 
     <include
@@ -11,13 +12,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
-        android:visibility="visible" />
+        android:visibility="invisible" />
 
     <FrameLayout
         android:id="@+id/fragment_send_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/dark_gray_text"
+        android:background="@color/dark_frost"
         android:layout_alignParentBottom="true">
 
         <info.hoang8f.android.segmented.SegmentedGroup

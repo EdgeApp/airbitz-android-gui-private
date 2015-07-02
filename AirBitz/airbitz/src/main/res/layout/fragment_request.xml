@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:background="@drawable/tab_base_frost"
     android:layout_height="match_parent">
 
     <LinearLayout 
@@ -171,7 +172,7 @@
                     android:layout_marginTop="6dp"
                     android:layout_gravity="center_horizontal"
                     android:text="@string/request_qr_waiting_for_payment"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/dark_text"
                     android:textSize="18dp" />
 
                 <TextView
@@ -183,7 +184,7 @@
                     android:ellipsize="middle"
                     android:gravity="center_horizontal"
                     android:singleLine="true"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/dark_text"
                     android:textSize="14dp" />
 
                     <info.hoang8f.android.segmented.SegmentedGroup
@@ -192,8 +193,8 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="2dp"
                         android:layout_gravity="center_horizontal"
-                        app:tint_color="@android:color/white"
-                        app:checked_text_color="@color/colorPrimaryDark"
+                        android:textColor="@color/dark_text"
+                        app:checked_text_color="@color/dark_text"
                         android:orientation="horizontal">
 
                         <RadioButton
