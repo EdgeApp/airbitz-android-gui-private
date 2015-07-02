@@ -35,12 +35,22 @@ import android.animation.ObjectAnimator;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Display;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.WindowManager;
+
+import com.balysv.materialmenu.MaterialMenuDrawable;
+import com.balysv.materialmenu.MaterialMenuDrawable.IconState;
+import static com.balysv.materialmenu.MaterialMenuDrawable.Stroke;
 
 import com.airbitz.AirbitzApplication;
 import com.airbitz.R;
@@ -48,12 +58,36 @@ import com.airbitz.activities.NavigationActivity;
 
 public class BaseFragment extends Fragment {
     public static Integer DURATION = 300;
+
     protected NavigationActivity mActivity;
     public String mFragmentType;
+    protected Toolbar mToolbar;
+    protected boolean mDrawerEnabled = true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    public void setDrawerEnabled(boolean enabled) {
+        mDrawerEnabled = enabled;
+    }
+
+    private MaterialMenuDrawable mMaterialMenu;
+
+    @Override
+    public void onStart() {
+        View view = getView();
+        mToolbar = (Toolbar) view.findViewById(R.id.toolbar);
+        if (mToolbar != null) {
+            mActivity.setSupportActionBar(mToolbar);
+            if (mDrawerEnabled) {
+                mMaterialMenu = new MaterialMenuDrawable(mActivity, Color.WHITE, Stroke.THIN);
+                mToolbar.setNavigationIcon(mMaterialMenu);
+                updateNavigationIcon();
+            }
+        }
+        super.onStart();
     }
 
     @Override
@@ -70,6 +104,11 @@ public class BaseFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+    protected LayoutInflater getThemedInflater(LayoutInflater inflater, int theme) {
+        final Context contextThemeWrapper = new ContextThemeWrapper(mActivity, theme);
+        return inflater.cloneInContext(contextThemeWrapper);
     }
 
     // Overriding the fragment transition animations to use variable display width
@@ -148,6 +187,38 @@ public class BaseFragment extends Fragment {
         @Override
         protected void onCancelled() {
             mActivity.mAsyncTasks.pop();
+        }
+    }
+
+    protected void showArrow() {
+        if (mMaterialMenu != null) {
+            mMaterialMenu.animateIconState(IconState.ARROW);
+        }
+    }
+
+    protected void showBurger() {
+        if (mMaterialMenu != null) {
+            mMaterialMenu.animateIconState(IconState.BURGER);
+        }
+    }
+
+    protected void onNavigationClick() {
+        if (mActivity.isDrawerOpen()) {
+            mActivity.closeDrawer();
+        } else {
+            mActivity.openDrawer();
+        }
+    }
+
+    protected void updateNavigationIcon() {
+        if (mToolbar != null) {
+            mToolbar.setNavigationIcon(mMaterialMenu);
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onNavigationClick();
+                }
+            });
         }
     }
 }

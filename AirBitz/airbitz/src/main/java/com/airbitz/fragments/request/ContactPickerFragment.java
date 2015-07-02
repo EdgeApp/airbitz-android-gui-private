@@ -31,14 +31,14 @@
 
 package com.airbitz.fragments.request;
 
+import android.app.FragmentTransaction;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.widget.Toolbar;
+import android.telephony.PhoneNumberUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -62,21 +62,18 @@ import com.airbitz.adapters.ContactSearchAdapter;
 import com.airbitz.fragments.BaseFragment;
 import com.airbitz.fragments.HelpFragment;
 import com.airbitz.models.Contact;
-import com.airbitz.objects.HighlightOnPressImageButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by tom on 9/25/14.
- */
-public class ContactPickerFragment extends BaseFragment {
+public class ContactPickerFragment
+        extends BaseFragment
+        implements NavigationActivity.OnBackPress {
     public final static String TYPE = "com.airbitz.contact_picker_fragment.type";
     public final static String EMAIL = "com.airbitz.contact_picker_fragment.email";
     public final static String SMS = "com.airbitz.contact_picker_fragment.sms";
     private final String TAG = getClass().getSimpleName();
     private EditText mContactName;
-    private TextView mFragmentTitle;
     private ListView mSearchListView;
     private Bundle mBundle;
     private List<Contact> mContacts = new ArrayList<Contact>();
@@ -99,6 +96,7 @@ public class ContactPickerFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         mBundle = getArguments();
         setHasOptionsMenu(true);
+        setDrawerEnabled(false);
     }
 
     @Override
@@ -111,15 +109,13 @@ public class ContactPickerFragment extends BaseFragment {
         getBaseActivity().getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getBaseActivity().getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        mFragmentTitle = (TextView) mView.findViewById(R.id.title);
+        mContactName = (EditText) mView.findViewById(R.id.search);
         if (mBundle.getString(TYPE).equals(EMAIL)) {
-            mFragmentTitle.setText(getString(R.string.fragment_contact_picker_title_email));
+            mContactName.setHint(getString(R.string.fragment_contact_picker_title_email));
         } else {
-
-            mFragmentTitle.setText(getString(R.string.fragment_contact_picker_title_sms));
+            mContactName.setHint(getString(R.string.fragment_contact_picker_title_sms));
         }
 
-        mContactName = (EditText) mView.findViewById(R.id.fragment_contact_picker_edittext_name);
         mSearchListView = (ListView) mView.findViewById(R.id.fragment_contact_picker_listview_search);
         mSearchAdapter = new ContactSearchAdapter(getActivity(), mFilteredContacts);
         mSearchListView.setAdapter(mSearchAdapter);
@@ -142,8 +138,7 @@ public class ContactPickerFragment extends BaseFragment {
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_DONE && mActivity != null) {
                     mActivity.hideSoftKeyboard(mContactName);
-                    mActivity.popFragment();
-                    mActivity.getFragmentManager().executePendingTransactions();
+                    ContactPickerFragment.popFragment(mActivity);
                     String name = mContactName.getText().toString();
                     if (mBundle.getString(TYPE).equals(EMAIL)) {
                         mContactSelection.onContactSelection(new Contact(name, name, null, null));
@@ -180,33 +175,33 @@ public class ContactPickerFragment extends BaseFragment {
                 mContactName.setText(contact.getName());
 
                 if (mContactSelection != null) {
-                    ((NavigationActivity) getActivity()).popFragment();
-                    mActivity.getFragmentManager().executePendingTransactions();
+                    ContactPickerFragment.popFragment(mActivity);
                     mContactSelection.onContactSelection(contact);
                 }
             }
         });
-
         return mView;
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_standard, menu);
+        inflater.inflate(R.menu.menu_closeable, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+        case R.id.action_close:
+            mContactName.setText("");
+            return true;
         case R.id.action_help:
             mActivity.pushFragment(
                 new HelpFragment(HelpFragment.RECIPIENT),
                     NavigationActivity.Tabs.REQUEST.ordinal());
             return true;
         case android.R.id.home:
-            mActivity.onBackPressed();
-            mActivity.showNavBar();
+            ContactPickerFragment.popFragment(mActivity);
             return true;
         default:
             return super.onOptionsItemSelected(item);
@@ -219,15 +214,15 @@ public class ContactPickerFragment extends BaseFragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        mContactName.requestFocus();
+    public boolean onBackPress() {
+        ContactPickerFragment.popFragment(mActivity);
+        return true;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+    public void onResume() {
+        super.onResume();
+        mContactName.requestFocus();
     }
 
     private static final String[] EMAIL_PROJECTION = new String[] {
@@ -242,7 +237,7 @@ public class ContactPickerFragment extends BaseFragment {
             ContactsContract.Contacts.PHOTO_THUMBNAIL_URI
     };
 
-    private List<Contact> GetMatchedContacts(String term, boolean emailSearch) {
+    private List<Contact> getMatchedContacts(String term, boolean emailSearch) {
         List<Contact> contacts = new ArrayList<Contact>();
 
         long startMillis = System.currentTimeMillis();
@@ -259,7 +254,7 @@ public class ContactPickerFragment extends BaseFragment {
             args = new String[]{term.toUpperCase() + "*"};
         }
 
-        if(emailSearch) {
+        if (emailSearch) {
             Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, EMAIL_PROJECTION, buffer == null ? null : buffer.toString(), args,
                     ContactsContract.Contacts.SORT_KEY_PRIMARY + " ASC");
             if (cursor != null) {
@@ -278,9 +273,8 @@ public class ContactPickerFragment extends BaseFragment {
                     cursor.close();
                 }
             }
-        }
-        else {
-            Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, PHONE_PROJECTION, buffer == null ? null : buffer.toString(), args,
+        } else {
+            Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, PHONE_PROJECTION, buffer == null ? null : buffer.toString(), args,
                     ContactsContract.Contacts.SORT_KEY_PRIMARY + " ASC");
             if (cursor != null) {
                 try {
@@ -292,7 +286,7 @@ public class ContactPickerFragment extends BaseFragment {
                         name = cursor.getString(displayNameIndex);
                         number = cursor.getString(indexNumber);
                         String thumbnail = cursor.getString(indexThumbnail);
-                        contacts.add(new Contact(name, null, number, thumbnail));
+                        contacts.add(new Contact(name, null, PhoneNumberUtils.formatNumber(number), thumbnail));
                     }
                 } finally {
                     cursor.close();
@@ -306,7 +300,6 @@ public class ContactPickerFragment extends BaseFragment {
         public void onContactSelection(Contact contact);
     }
 
-
     AutoCompleteContactsTask mAutoCompleteContactsTask = null;
     public class AutoCompleteContactsTask extends AsyncTask<String, Void, Void> {
 
@@ -317,7 +310,7 @@ public class ContactPickerFragment extends BaseFragment {
 
         @Override
         protected Void doInBackground(String... params) {
-            mFilteredContacts.addAll(GetMatchedContacts(params[0], mBundle.getString(TYPE).equals(EMAIL)));
+            mFilteredContacts.addAll(getMatchedContacts(params[0], mBundle.getString(TYPE).equals(EMAIL)));
             return null;
         }
 
@@ -335,4 +328,15 @@ public class ContactPickerFragment extends BaseFragment {
         }
     }
 
+    public static void pushFragment(NavigationActivity mActivity, Bundle bundle, ContactSelection listener) {
+        ContactPickerFragment fragment = new ContactPickerFragment();
+        fragment.setContactSelectionListener(listener);
+        fragment.setArguments(bundle);
+        mActivity.pushFragment(fragment);
+    }
+
+    public static void popFragment(NavigationActivity mActivity) {
+        mActivity.popFragment();
+        mActivity.getFragmentManager().executePendingTransactions();
+    }
 }

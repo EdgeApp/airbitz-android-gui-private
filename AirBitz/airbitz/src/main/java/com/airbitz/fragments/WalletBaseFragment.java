@@ -65,7 +65,6 @@ public class WalletBaseFragment extends BaseFragment implements
 
     private final String TAG = WalletBaseFragment.class.getSimpleName();
 
-    private Toolbar mToolbar;
     private View mBlocker;
 
     protected Handler mHandler = new Handler();
@@ -75,7 +74,8 @@ public class WalletBaseFragment extends BaseFragment implements
     protected View mWalletsContainer;
     protected TextView mTitleView;
     protected CoreAPI mCoreApi;
-    protected boolean mHomeEnabled = false;
+    protected boolean mHomeEnabled = true;
+    protected boolean mDrawerEnabled = false;
     protected boolean mDropDownEnabled = true;
     protected boolean mOnBitcoinMode = true;
     protected boolean mExpanded = false;
@@ -102,7 +102,6 @@ public class WalletBaseFragment extends BaseFragment implements
 
         View view = getView();
         mToolbar = (Toolbar) view.findViewById(R.id.toolbar);
-        mActivity.setSupportActionBar(mToolbar);
         mActivity.getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         mBlocker = view.findViewById(R.id.toolbar_blocker);
@@ -130,11 +129,6 @@ public class WalletBaseFragment extends BaseFragment implements
             finishShowWallets();
         } else {
             finishHideWallets();
-
-            if (mHomeEnabled) {
-                mActivity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                mActivity.getSupportActionBar().setDisplayShowHomeEnabled(true);
-            }
         }
         updateTitle();
     }
@@ -161,6 +155,7 @@ public class WalletBaseFragment extends BaseFragment implements
 
     @Override
     public void onWalletUpdated() {
+        if (null == mWallet) return;
         mLoading = mWallet.getCurrencyNum() == -1 ? true : false;
         fetchWallets();
         loadWallets();
@@ -197,7 +192,10 @@ public class WalletBaseFragment extends BaseFragment implements
 
     @Override
     public boolean onBackPress() {
-        if (isMenuExpanded()) {
+        if (mActivity.isDrawerOpen()) {
+            mActivity.closeDrawer();
+            return true;
+        } else if (isMenuExpanded()) {
             hideWalletList();
             return true;
         } else {
@@ -227,18 +225,16 @@ public class WalletBaseFragment extends BaseFragment implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (isMenuExpanded() && android.R.id.home == item.getItemId()) {
-            hideWalletList();
-            return true;
-        }
         return super.onOptionsItemSelected(item);
     }
 
     protected void updateTitle() {
-        if (mLoading) {
-            mTitleView.setText(R.string.string_loading);
-        } else {
-            mTitleView.setText(mWallet.getName() + " ▼");
+        if (mTitleView != null) {
+            if (mLoading) {
+                mTitleView.setText(R.string.string_loading);
+            } else {
+                mTitleView.setText(mWallet.getName() + " ▼");
+            }
         }
     }
 
@@ -309,8 +305,7 @@ public class WalletBaseFragment extends BaseFragment implements
         mActivity.invalidateOptionsMenu();
         mExpanded = true;
 
-        mActivity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        mActivity.getSupportActionBar().setDisplayShowHomeEnabled(true);
+        showArrow();
     }
 
     public void hideWalletList() {
@@ -342,9 +337,18 @@ public class WalletBaseFragment extends BaseFragment implements
         mActivity.invalidateOptionsMenu();
         mExpanded = false;
 
-        if (!mHomeEnabled) {
-            mActivity.getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-            mActivity.getSupportActionBar().setDisplayShowHomeEnabled(false);
+        updateNavigationIcon();
+
+        showBurger();
+    }
+
+
+    @Override
+    protected void onNavigationClick() {
+        if (isMenuExpanded()) {
+            hideWalletList();
+        } else {
+            super.onNavigationClick();
         }
     }
 }
