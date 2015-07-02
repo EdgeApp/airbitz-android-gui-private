@@ -49,6 +49,7 @@ import com.airbitz.activities.NavigationActivity;
 public class BaseFragment extends Fragment {
     public static Integer DURATION = 300;
     protected NavigationActivity mActivity;
+    public String mFragmentType;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

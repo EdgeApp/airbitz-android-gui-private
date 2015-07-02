@@ -79,6 +79,10 @@ public class CategoryFragment extends BaseFragment {
     private List<String> mCategories;
     private List<String> mCurrentCategories;
 
+    public CategoryFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

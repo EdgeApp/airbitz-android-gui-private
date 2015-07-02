@@ -90,6 +90,10 @@ public class ContactPickerFragment extends BaseFragment {
         mContactSelection = listener;
     }
 
+    public ContactPickerFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

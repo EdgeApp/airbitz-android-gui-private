@@ -116,6 +116,10 @@ public class SignUpFragment extends BaseFragment implements NavigationActivity.O
      */
     private ChangeTask mChangeTask;
 
+    public SignUpFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

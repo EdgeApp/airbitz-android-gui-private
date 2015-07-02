@@ -182,7 +182,9 @@ public class SendConfirmationFragment extends WalletBaseFragment implements
 
     private OnExitHandler exitHandler;
 
-    public SendConfirmationFragment() {}
+    public SendConfirmationFragment() {
+        mFragmentType = this.getClass().getName();
+    }
 
     public void setSpendTarget(CoreAPI.SpendTarget target) {
         mSpendTarget = target;

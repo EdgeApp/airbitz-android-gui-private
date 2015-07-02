@@ -119,6 +119,9 @@ public class DirectoryDetailFragment extends BaseFragment {
     private GetBusinessDetailTask mTask;
     private NavigationActivity mActivity;
 
+    public DirectoryDetailFragment() {
+        mFragmentType = this.getClass().getName();
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

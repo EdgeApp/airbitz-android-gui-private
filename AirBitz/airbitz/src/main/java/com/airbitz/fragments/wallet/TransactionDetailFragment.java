@@ -206,6 +206,10 @@ public class TransactionDetailFragment extends BaseFragment
     private NavigationActivity mActivity;
     private AlertDialog mMessageDialog;
 
+    public TransactionDetailFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

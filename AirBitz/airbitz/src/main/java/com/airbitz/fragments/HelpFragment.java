@@ -73,6 +73,7 @@ public class HelpFragment extends BaseFragment {
     int mID = 0;
 
     public HelpFragment() {
+        mFragmentType = this.getClass().getName();
     }
 
     public HelpFragment(Spanned html) {

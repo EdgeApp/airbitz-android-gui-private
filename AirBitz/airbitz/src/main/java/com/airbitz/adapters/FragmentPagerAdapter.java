@@ -27,9 +27,17 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.airbitz.fragments.BaseFragment;
 import com.airbitz.fragments.directory.BusinessDirectoryFragment;
 import com.airbitz.fragments.directory.DirectoryDetailFragment;
 import com.airbitz.fragments.login.LandingFragment;
+import com.airbitz.fragments.login.SignUpFragment;
+import com.airbitz.fragments.request.ContactPickerFragment;
+import com.airbitz.fragments.send.SendConfirmationFragment;
+import com.airbitz.fragments.settings.CategoryFragment;
+import com.airbitz.fragments.settings.PasswordRecoveryFragment;
+import com.airbitz.fragments.settings.twofactor.TwoFactorMenuFragment;
+import com.airbitz.fragments.wallet.TransactionDetailFragment;
 
 /**
  * Implementation of {@link android.support.v4.view.PagerAdapter} that
@@ -180,11 +188,9 @@ public abstract class FragmentPagerAdapter extends PagerAdapter {
 
     private static String makeFragmentName(int containerId, Fragment fragment, long id) {
         // Ugh. Need to determine what type of fragment this is to give it a unique tag
-        String classStr = null;
-        if (fragment instanceof BusinessDirectoryFragment) classStr = "BusinessDirectoryFragment";
-        else if (fragment instanceof DirectoryDetailFragment) classStr = "DirectoryDetailFragment";
-        else if (fragment instanceof LandingFragment) classStr = "LandingFragment";
 
-        return "android:switcher:" + containerId + ":" + classStr + ":" + id;
+        BaseFragment baseFragment = (BaseFragment) fragment;
+
+        return "android:switcher:" + containerId + ":" + baseFragment.mFragmentType + ":" + id;
     }
 }

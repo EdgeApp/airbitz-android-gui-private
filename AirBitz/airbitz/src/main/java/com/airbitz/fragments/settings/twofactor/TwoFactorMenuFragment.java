@@ -92,6 +92,10 @@ public class TwoFactorMenuFragment extends BaseFragment implements
         mOnTwoFactorMenuResult = listener;
     }
 
+    public TwoFactorMenuFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

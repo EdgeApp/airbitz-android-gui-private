@@ -129,6 +129,10 @@ public class LandingFragment extends BaseFragment implements
      */
     private GetRecoveryQuestionsTask mRecoveryQuestionsTask;
 
+    public LandingFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -123,6 +123,7 @@ public class SendFragment extends WalletBaseFragment implements
 
     private Handler mHandler;
     private boolean hasCheckedFirstUsage;
+    private boolean bIsVisibleToUser;
     private Button mTransferButton, mAddressButton, mFlashButton, mGalleryButton;
     private ListView mOtherWalletsListView;
     private RelativeLayout mListviewContainer;
@@ -139,6 +140,10 @@ public class SendFragment extends WalletBaseFragment implements
     QRCamera mQRCamera;
     private CoreAPI mCoreApi;
 
+    public SendFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mCoreApi = CoreAPI.getApi();
@@ -148,6 +153,7 @@ public class SendFragment extends WalletBaseFragment implements
         mBluetoothLayout = (RelativeLayout) mView.findViewById(R.id.fragment_send_bluetooth_layout);
         mCameraLayout = (RelativeLayout) mView.findViewById(R.id.fragment_send_layout_camera);
         mQRCamera = new QRCamera(this, mCameraLayout);
+        bIsVisibleToUser = false;
 
 //        final RelativeLayout header = (RelativeLayout) mView.findViewById(R.id.fragment_send_header);
 //        mHelpButton = (HighlightOnPressButton) header.findViewById(R.id.layout_wallet_select_header_right);
@@ -274,11 +280,17 @@ public class SendFragment extends WalletBaseFragment implements
 
     public void stopCamera() {
         Log.d(TAG, "stopCamera");
-        mQRCamera.stopCamera();
+        if (mQRCamera != null)
+            mQRCamera.stopCamera();
+        if (mCameraLayout != null)
+            mCameraLayout.setVisibility(View.INVISIBLE);
     }
 
     public void startCamera() {
-        mQRCamera.startCamera();
+        if (mQRCamera != null)
+            mQRCamera.startCamera();
+        if (mCameraLayout != null)
+            mCameraLayout.setVisibility(View.VISIBLE);
         checkFirstUsage();
     }
 
@@ -334,7 +346,8 @@ public class SendFragment extends WalletBaseFragment implements
             mHandler = new Handler();
         }
 
-        startCamera();
+        if (bIsVisibleToUser)
+            startCamera();
 
         final NfcManager nfcManager = (NfcManager) mActivity.getSystemService(Context.NFC_SERVICE);
         NfcAdapter mNfcAdapter = nfcManager.getDefaultAdapter();
@@ -356,12 +369,11 @@ public class SendFragment extends WalletBaseFragment implements
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser) {
-            mQRCamera.startCamera();
+            startCamera();
         } else {
-            if (mQRCamera != null) {
-                mQRCamera.stopCamera();
-            }
+            stopCamera();
         }
+        bIsVisibleToUser = isVisibleToUser;
     }
 
     public void updateWalletOtherList() {

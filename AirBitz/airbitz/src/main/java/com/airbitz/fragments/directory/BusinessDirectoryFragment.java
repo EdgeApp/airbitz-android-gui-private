@@ -168,9 +168,14 @@ public class BusinessDirectoryFragment extends BaseFragment implements
         }
     };
 
+    public BusinessDirectoryFragment() {
+        mFragmentType = this.getClass().getName();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (mBusinessList == null) {
             mBusinessList = new ArrayList<Business>();
         }

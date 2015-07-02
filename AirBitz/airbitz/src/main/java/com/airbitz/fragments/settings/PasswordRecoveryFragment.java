@@ -62,6 +62,7 @@ import com.airbitz.api.CoreAPI;
 import com.airbitz.api.tABC_CC;
 import com.airbitz.fragments.BaseFragment;
 import com.airbitz.fragments.login.SignUpFragment;
+import com.airbitz.fragments.request.ContactPickerFragment;
 import com.airbitz.fragments.settings.twofactor.TwoFactorMenuFragment;
 
 import java.util.ArrayList;
@@ -113,6 +114,10 @@ public class PasswordRecoveryFragment extends BaseFragment implements
     private NavigationActivity mActivity;
     private View mView;
     private Toolbar mToolbar;
+
+    public PasswordRecoveryFragment() {
+        mFragmentType = this.getClass().getName();
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
