@@ -207,7 +207,7 @@ public class WalletBaseFragment extends BaseFragment implements
     public void onResume() {
         super.onResume();
 
-        mCoreApi.setOnWalletLoadedListener(this);
+        mCoreApi.addOnWalletLoadedListener(this);
         mCoreApi.addExchangeRateChangeListener(this);
         mActivity.setOnWalletUpdated(this);
 
@@ -218,7 +218,7 @@ public class WalletBaseFragment extends BaseFragment implements
     public void onPause() {
         super.onPause();
 
-        mCoreApi.setOnWalletLoadedListener(null);
+        mCoreApi.removeOnWalletLoadedListener(this);
         mCoreApi.removeExchangeRateChangeListener(this);
         mActivity.setOnWalletUpdated(null);
     }

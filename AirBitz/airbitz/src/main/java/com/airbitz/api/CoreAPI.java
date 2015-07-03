@@ -345,6 +345,16 @@ public class CoreAPI {
         void onWalletsLoaded();
     }
 
+    List<OnWalletLoaded> mOnWalletLoadedListeners = new ArrayList<OnWalletLoaded>();
+    public void addOnWalletLoadedListener(OnWalletLoaded listener) {
+        mOnWalletLoadedListeners.add(listener);
+        reloadWallets();
+    }
+
+    public void removeOnWalletLoadedListener(OnWalletLoaded listener) {
+        mOnWalletLoadedListeners.remove(listener);
+    }
+
     // This is a blocking call. You must wrap this in an AsyncTask or similar.
     public boolean createWallet(String username, String password, String walletName, int currencyNum) {
         if (!hasConnectivity()) {
@@ -480,6 +490,9 @@ public class CoreAPI {
         @Override
         protected void onPostExecute(List<Wallet> walletList) {
             mCoreWallets = walletList;
+            for (OnWalletLoaded l : mOnWalletLoadedListeners) {
+                l.onWalletsLoaded();
+            }
             if (mOnWalletLoadedListener != null) {
                 Log.d(TAG, "wallets loaded");
                 mOnWalletLoadedListener.onWalletsLoaded();
