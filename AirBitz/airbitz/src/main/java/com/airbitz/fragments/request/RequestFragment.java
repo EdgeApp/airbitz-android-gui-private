@@ -513,8 +513,6 @@ public class RequestFragment extends WalletBaseFragment implements
 
     @Override
     public void onWalletsLoaded() {
-        if (null == mWallet) return;
-
         super.onWalletsLoaded();
 
         mAutoUpdatingTextFields = true;
