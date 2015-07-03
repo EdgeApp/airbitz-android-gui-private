@@ -209,7 +209,7 @@ public class WalletBaseFragment extends BaseFragment implements
 
         mCoreApi.addOnWalletLoadedListener(this);
         mCoreApi.addExchangeRateChangeListener(this);
-        mActivity.setOnWalletUpdated(this);
+        mActivity.addOnWalletUpdated(this);
 
         mOnBitcoinMode = AirbitzApplication.getBitcoinSwitchMode();
     }
@@ -220,7 +220,7 @@ public class WalletBaseFragment extends BaseFragment implements
 
         mCoreApi.removeOnWalletLoadedListener(this);
         mCoreApi.removeExchangeRateChangeListener(this);
-        mActivity.setOnWalletUpdated(null);
+        mActivity.removeOnWalletUpdated(null);
     }
 
     @Override

@@ -1012,9 +1012,21 @@ public class NavigationActivity extends ActionBarActivity
         mOnWalletUpdated = listener;
     }
 
+    List<OnWalletUpdated> mOnWalletUpdatedListeners = new ArrayList<>();
+    public void addOnWalletUpdated(OnWalletUpdated listener) {
+        mOnWalletUpdatedListeners.add(listener);
+    }
+
+    public void removeOnWalletUpdated(OnWalletUpdated listener) {
+        mOnWalletUpdatedListeners.remove(listener);
+    }
+
     private void updateWalletListener() {
         if (mOnWalletUpdated != null)
             mOnWalletUpdated.onWalletUpdated();
+        for (OnWalletUpdated l : mOnWalletUpdatedListeners) {
+            l.onWalletUpdated();
+        }
     }
 
     @Override
