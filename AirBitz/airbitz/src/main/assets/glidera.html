@@ -6711,8 +6711,8 @@ var Glidera = (function () {
     this.key = o.key || '';
     this.secret = o.secret || '';
     this.GLIDERA_URL = o.sandbox == true
-        ? 'https://sandbox.glidera.com'
-        : 'https://www.glidera.com';
+        ? 'https://sandbox.glidera.io'
+        : 'https://www.glidera.io';
   }
 
   Glidera.prototype = {
@@ -7519,6 +7519,8 @@ var Glidera = (function () {
           $state.go('authorize');
         }
       });
+    } else if ("backaccount" == d.state) {
+      $state.go('dashboard');
     }
   }
 
@@ -8618,62 +8620,6 @@ try {
   module = angular.module('app', []);
 }
 module.run(['$templateCache', function($templateCache) {
-  $templateCache.put('app/2fa/partials/verify.twofactor.html',
-    '<div class="twofa row text-center">\n' +
-    '  <form class="form col-xs-offset-2 col-xs-8" novalidate>\n' +
-    '    <div ng-show="hasNumber" class="form-group">\n' +
-    '      <div class="row">\n' +
-    '        <p><label class="label label-warning">Note</label> You already have a\n' +
-    '        phone number set. In order to change the number you have to include the\n' +
-    '        previous two factor code.</p>\n' +
-    '      </div>\n' +
-    '      <label for="inputOldVerificationCode" class="sr-only">Old Verification Code</label>\n' +
-    '      <input\n' +
-    '        type="number"\n' +
-    '        id="inputOldVerificationCode"\n' +
-    '        class="large text-center"\n' +
-    '        placeholder="Previous 2FA Code"\n' +
-    '        autocorrect="off"\n' +
-    '        autocomplete="off"\n' +
-    '        ng-model="oldVerificationCode"\n' +
-    '        pattern="[0-9]*"\n' +
-    '      />\n' +
-    '    </div>\n' +
-    '    <div class="form-group">\n' +
-    '      <label for="inputVerificationCode" class="sr-only">Verification Code</label>\n' +
-    '      <input\n' +
-    '        type="number"\n' +
-    '        id="inputVerificationCode"\n' +
-    '        class="large text-center"\n' +
-    '        placeholder="Your Code"\n' +
-    '        autocorrect="off"\n' +
-    '        autocomplete="off"\n' +
-    '        ng-model="verificationCode"\n' +
-    '        pattern="[0-9]*"\n' +
-    '        auto-focus\n' +
-    '      />\n' +
-    '      <button type="submit" ng-click="submit2FA()"\n' +
-    '              class="buy-sell-next btn btn-lg btn-block btn-success">Verify Code</button>\n' +
-    '    </div>\n' +
-    '  </form>\n' +
-    '</div>\n' +
-    '\n' +
-    '<div class="row text-center" ng-if="account.phone">\n' +
-    '  <h3 class="col-xs-12">Code sent to:</h3>\n' +
-    '  <h3 class="col-xs-12" style="margin-top: 0;"><label class="label label-outline"><span style="color: #ddd;">Phone:</span> {{ account.phone }}</label></h3>\n' +
-    '</div>\n' +
-    '\n' +
-    '');
-}]);
-})();
-
-(function(module) {
-try {
-  module = angular.module('app');
-} catch (e) {
-  module = angular.module('app', []);
-}
-module.run(['$templateCache', function($templateCache) {
   $templateCache.put('app/error/partials/error.html',
     '<div class="error-screen text-center row">\n' +
     '  <div class="col-xs-12">\n' +
@@ -9014,6 +8960,164 @@ module.run(['$templateCache', function($templateCache) {
     '    <span class="limit-label">Monthly</span> <span class="limit-data">{{ limits.monthlySellRemaining | currency:"$" }}</span>\n' +
     '  </div>\n' +
     '</div>');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/2fa/partials/verify.twofactor.html',
+    '<div class="twofa row text-center">\n' +
+    '  <form class="form col-xs-offset-2 col-xs-8" novalidate>\n' +
+    '    <div ng-show="hasNumber" class="form-group">\n' +
+    '      <div class="row">\n' +
+    '        <p><label class="label label-warning">Note</label> You already have a\n' +
+    '        phone number set. In order to change the number you have to include the\n' +
+    '        previous two factor code.</p>\n' +
+    '      </div>\n' +
+    '      <label for="inputOldVerificationCode" class="sr-only">Old Verification Code</label>\n' +
+    '      <input\n' +
+    '        type="number"\n' +
+    '        id="inputOldVerificationCode"\n' +
+    '        class="large text-center"\n' +
+    '        placeholder="Previous 2FA Code"\n' +
+    '        autocorrect="off"\n' +
+    '        autocomplete="off"\n' +
+    '        ng-model="oldVerificationCode"\n' +
+    '        pattern="[0-9]*"\n' +
+    '      />\n' +
+    '    </div>\n' +
+    '    <div class="form-group">\n' +
+    '      <label for="inputVerificationCode" class="sr-only">Verification Code</label>\n' +
+    '      <input\n' +
+    '        type="number"\n' +
+    '        id="inputVerificationCode"\n' +
+    '        class="large text-center"\n' +
+    '        placeholder="Your Code"\n' +
+    '        autocorrect="off"\n' +
+    '        autocomplete="off"\n' +
+    '        ng-model="verificationCode"\n' +
+    '        pattern="[0-9]*"\n' +
+    '        auto-focus\n' +
+    '      />\n' +
+    '      <button type="submit" ng-click="submit2FA()"\n' +
+    '              class="buy-sell-next btn btn-lg btn-block btn-success">Verify Code</button>\n' +
+    '    </div>\n' +
+    '  </form>\n' +
+    '</div>\n' +
+    '\n' +
+    '<div class="row text-center" ng-if="account.phone">\n' +
+    '  <h3 class="col-xs-12">Code sent to:</h3>\n' +
+    '  <h3 class="col-xs-12" style="margin-top: 0;"><label class="label label-outline"><span style="color: #ddd;">Phone:</span> {{ account.phone }}</label></h3>\n' +
+    '</div>\n' +
+    '\n' +
+    '');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/prices/partials/expires.html',
+    '<div class="live-price-expiration">\n' +
+    '  <span class="expiration-label">Expires</span> <span class="expiration-data">{{ expires }}</span>\n' +
+    '</div>\n' +
+    '');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/prices/partials/rate.html',
+    '<div class="live-price-rate">\n' +
+    '  <span class="price-rate-label">1 BTC =</span> <span class="price-rate-data">{{ price }} {{ currency }} </span>\n' +
+    '</div>\n' +
+    '');
+}]);
+})();
+
+(function(module) {
+try {
+  module = angular.module('app');
+} catch (e) {
+  module = angular.module('app', []);
+}
+module.run(['$templateCache', function($templateCache) {
+  $templateCache.put('app/receipt/partials/receipt.html',
+    '<h2 class="order-receipt-heading">\n' +
+    '  <img class="bitcoin-logo" src="./img/bitcoin-icon-logo.png"> Order Receipt\n' +
+    '</h2>\n' +
+    '\n' +
+    '<div class="order-review row">\n' +
+    '  <div class="col-xs-12">\n' +
+    '    <table class="table table-bordered">\n' +
+    '      <tbody>\n' +
+    '        <tr>\n' +
+    '          <td>Order Type</td>\n' +
+    '          <td>{{ order.orderAction || "orderAction" | titlecase }} Order</td>\n' +
+    '        </tr>\n' +
+    '      </tbody>\n' +
+    '    </table>\n' +
+    '\n' +
+    '    <table class="table table-bordered">\n' +
+    '      <tbody>\n' +
+    '        <tr ng-show="{{ order.orderAction === \'buy\' }}">\n' +
+    '          <td>Destination Wallet</td>\n' +
+    '          <td>{{ order.transferToWallet.name || "" }}</td>\n' +
+    '        </tr>\n' +
+    '        <tr ng-show="{{ order.orderAction === \'sell\' }}">\n' +
+    '          <td>Sell From</td>\n' +
+    '          <td>{{ order.transferToWallet.name || "" }}</td>\n' +
+    '        </tr>\n' +
+    '      </tbody>\n' +
+    '    </table>\n' +
+    '\n' +
+    '    <table class="table table-bordered">\n' +
+    '      <tbody>\n' +
+    '        <tr>\n' +
+    '          <td>BTC Price:</td>\n' +
+    '          <td>{{ order.details.price | currency }}</td>\n' +
+    '        </tr>\n' +
+    '        <tr>\n' +
+    '          <td>BTC Amount:</td>\n' +
+    '          <td>{{ order.orderBtcInput }}</td>\n' +
+    '        </tr>\n' +
+    '        <tr>\n' +
+    '          <td>Sub Total:</td>\n' +
+    '          <td>{{ order.details.subtotal }}</td>\n' +
+    '        </tr>\n' +
+    '        <tr>\n' +
+    '          <td>Fees:</td>\n' +
+    '          <td>{{ order.details.fees }}</td>\n' +
+    '        </tr>\n' +
+    '        <tr>\n' +
+    '          <td>Total:</td>\n' +
+    '          <td>{{ order.details.total }}</td>\n' +
+    '        </tr>\n' +
+    '      </tbody>\n' +
+    '    </table>\n' +
+    '  </div>\n' +
+    '</div>\n' +
+    '\n' +
+    '<div class="row">\n' +
+    '  <div class="text-right col-xs-12">\n' +
+    '    <button ng-click="finish()" class="btn btn-lg btn-primary">Finish</button>\n' +
+    '  </div>\n' +
+    '</div>\n' +
+    '');
 }]);
 })();
 
@@ -9463,108 +9567,6 @@ module.run(['$templateCache', function($templateCache) {
     '\n' +
     '  </form>\n' +
     '\n' +
-    '</div>\n' +
-    '');
-}]);
-})();
-
-(function(module) {
-try {
-  module = angular.module('app');
-} catch (e) {
-  module = angular.module('app', []);
-}
-module.run(['$templateCache', function($templateCache) {
-  $templateCache.put('app/prices/partials/expires.html',
-    '<div class="live-price-expiration">\n' +
-    '  <span class="expiration-label">Expires</span> <span class="expiration-data">{{ expires }}</span>\n' +
-    '</div>\n' +
-    '');
-}]);
-})();
-
-(function(module) {
-try {
-  module = angular.module('app');
-} catch (e) {
-  module = angular.module('app', []);
-}
-module.run(['$templateCache', function($templateCache) {
-  $templateCache.put('app/prices/partials/rate.html',
-    '<div class="live-price-rate">\n' +
-    '  <span class="price-rate-label">1 BTC =</span> <span class="price-rate-data">{{ price }} {{ currency }} </span>\n' +
-    '</div>\n' +
-    '');
-}]);
-})();
-
-(function(module) {
-try {
-  module = angular.module('app');
-} catch (e) {
-  module = angular.module('app', []);
-}
-module.run(['$templateCache', function($templateCache) {
-  $templateCache.put('app/receipt/partials/receipt.html',
-    '<h2 class="order-receipt-heading">\n' +
-    '  <img class="bitcoin-logo" src="./img/bitcoin-icon-logo.png"> Order Receipt\n' +
-    '</h2>\n' +
-    '\n' +
-    '<div class="order-review row">\n' +
-    '  <div class="col-xs-12">\n' +
-    '    <table class="table table-bordered">\n' +
-    '      <tbody>\n' +
-    '        <tr>\n' +
-    '          <td>Order Type</td>\n' +
-    '          <td>{{ order.orderAction || "orderAction" | titlecase }} Order</td>\n' +
-    '        </tr>\n' +
-    '      </tbody>\n' +
-    '    </table>\n' +
-    '\n' +
-    '    <table class="table table-bordered">\n' +
-    '      <tbody>\n' +
-    '        <tr ng-show="{{ order.orderAction === \'buy\' }}">\n' +
-    '          <td>Destination Wallet</td>\n' +
-    '          <td>{{ order.transferToWallet.name || "" }}</td>\n' +
-    '        </tr>\n' +
-    '        <tr ng-show="{{ order.orderAction === \'sell\' }}">\n' +
-    '          <td>Sell From</td>\n' +
-    '          <td>{{ order.transferToWallet.name || "" }}</td>\n' +
-    '        </tr>\n' +
-    '      </tbody>\n' +
-    '    </table>\n' +
-    '\n' +
-    '    <table class="table table-bordered">\n' +
-    '      <tbody>\n' +
-    '        <tr>\n' +
-    '          <td>BTC Price:</td>\n' +
-    '          <td>{{ order.details.price | currency }}</td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
-    '          <td>BTC Amount:</td>\n' +
-    '          <td>{{ order.orderBtcInput }}</td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
-    '          <td>Sub Total:</td>\n' +
-    '          <td>{{ order.details.subtotal }}</td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
-    '          <td>Fees:</td>\n' +
-    '          <td>{{ order.details.fees }}</td>\n' +
-    '        </tr>\n' +
-    '        <tr>\n' +
-    '          <td>Total:</td>\n' +
-    '          <td>{{ order.details.total }}</td>\n' +
-    '        </tr>\n' +
-    '      </tbody>\n' +
-    '    </table>\n' +
-    '  </div>\n' +
-    '</div>\n' +
-    '\n' +
-    '<div class="row">\n' +
-    '  <div class="text-right col-xs-12">\n' +
-    '    <button ng-click="finish()" class="btn btn-lg btn-primary">Finish</button>\n' +
-    '  </div>\n' +
     '</div>\n' +
     '');
 }]);
