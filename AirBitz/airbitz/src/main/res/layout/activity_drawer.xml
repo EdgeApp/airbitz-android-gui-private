@@ -154,6 +154,12 @@
                             android:drawableLeft="@drawable/ic_directory_dark"
                             style="@style/DrawerButton"/>
 
+                        <Button
+                            android:id="@+id/item_drawer_support"
+                            android:text="@string/drawer_support"
+                            android:drawableLeft="@drawable/ic_support_dark"
+                            style="@style/DrawerButton"/>
+
                     </LinearLayout>
 
                 </RelativeLayout>
