@@ -69,6 +69,47 @@
                     style="@style/SettingsButton" />
 
             </LinearLayout>
+        <!-- Security -->
+        <TextView
+            android:id="@+id/settings_security_title"
+            android:text="@string/settings_security_title"
+            style="@style/SettingsTitle" />
+
+        <LinearLayout
+            android:id="@+id/security_buttons"
+            style="@style/SettingsGroup">
+
+            <Button
+                android:id="@+id/settings_button_spending_limits"
+                android:text="@string/settings_button_change_spending_limits"
+                style="@style/SettingsButton" />
+            <!-- Auto Logoff -->
+            <LinearLayout
+                android:orientation="horizontal"
+                style="@style/SettingsRow">
+
+                <TextView
+                    android:id="@+id/settings_title_auto_logoff"
+                    android:text="@string/settings_title_auto_logoff"
+                    style="@style/SettingsSplitText" />
+
+                <Button
+                    android:id="@+id/settings_button_auto_logoff"
+                    style="@style/SettingsSplitButton" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/settings_button_two_factor_authentication"
+                android:text="@string/settings_button_two_factor_authentication"
+                style="@style/SettingsButton" />
+
+            <Switch
+                android:id="@+id/settings_toggle_pin_login"
+                android:text="@string/settings_title_pin_login"
+                style="@style/SettingsTitle" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/settings_user_title"
@@ -121,21 +162,6 @@
                     style="@style/SettingsRow">
 
                     <TextView
-                        android:id="@+id/settings_title_auto_logoff"
-                        android:text="@string/settings_title_auto_logoff"
-                        style="@style/SettingsSplitText" />
-
-                    <Button
-                        android:id="@+id/settings_button_auto_logoff"
-                        style="@style/SettingsSplitButton" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    style="@style/SettingsRow">
-
-                    <TextView
                         android:id="@+id/settings_title_currency"
                         android:text="@string/settings_title_currency"
                         style="@style/SettingsSplitText" />
@@ -165,16 +191,6 @@
                     android:text="@string/settings_button_change_categories"
                     style="@style/SettingsButton" />
 
-                <Button
-                    android:id="@+id/settings_button_spending_limits"
-                    android:text="@string/settings_button_change_spending_limits"
-                    style="@style/SettingsButton" />
-
-                <Button
-                    android:id="@+id/settings_button_two_factor_authentication"
-                    android:text="@string/settings_button_two_factor_authentication"
-                    style="@style/SettingsButton" />
-
                 <Switch
                     android:id="@+id/settings_toggle_merchant_mode"
                     android:text="@string/settings_title_merchant_mode"
@@ -188,11 +204,6 @@
                 <Switch
                     android:id="@+id/settings_toggle_ble"
                     android:text="@string/settings_title_ble"
-                    style="@style/SettingsSwitch" />
-
-                <Switch
-                    android:id="@+id/settings_toggle_pin_login"
-                    android:text="@string/settings_title_pin_login"
                     style="@style/SettingsSwitch" />
 
             </LinearLayout>

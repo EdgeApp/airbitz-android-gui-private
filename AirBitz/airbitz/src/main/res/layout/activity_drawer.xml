@@ -117,18 +117,20 @@
                             android:text="@string/drawer_buy_sell"
                             style="@style/DrawerButton" />
 
+                        <include layout="@layout/divider_horizontal_light_gray" />
+                        <!-- Receive -->
                         <Button
                             android:id="@+id/item_drawer_request"
                             android:text="@string/drawer_request"
                             android:drawableLeft="@drawable/ic_receive_dark"
                             style="@style/DrawerButton"/>
-
+                        <!-- Send -->
                         <Button
                             android:id="@+id/item_drawer_send"
                             android:text="@string/drawer_send"
                             android:drawableLeft="@drawable/ic_send_dark"
                             style="@style/DrawerButton"/>
-
+                        <!-- Transactions -->
                         <Button
                             android:id="@+id/item_drawer_txs"
                             android:text="@string/drawer_transactions"
@@ -148,12 +150,14 @@
                             android:text="@string/drawer_import"
                             style="@style/DrawerButton" />
 
+                        <include layout="@layout/divider_horizontal_light_gray" />
+
                         <Button
                             android:id="@+id/item_drawer_directory"
                             android:text="@string/drawer_directory"
                             android:drawableLeft="@drawable/ic_directory_dark"
                             style="@style/DrawerButton"/>
-
+                        <!-- Support -->
                         <Button
                             android:id="@+id/item_drawer_support"
                             android:text="@string/drawer_support"

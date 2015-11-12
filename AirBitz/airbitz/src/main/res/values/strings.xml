@@ -234,6 +234,7 @@
 
     <!-- Strings for Settings fragment -->
     <string name="settings_title">Settings</string>
+    <string name="settings_security_title">SECURITY</string>
     <string name="settings_denomination_title">BITCOIN DENOMINATION</string>
     <string name="settings_denomination_buttons_bitcoin">Bitcoin</string>
     <string name="settings_denomination_buttons_mbitcoin">mBitcoin = (0.001 Bitcoin)</string>
