@@ -101,6 +101,13 @@ public class PluginFramework {
             plugin.env.put("REDIRECT_URI", "airbitz://plugin/glidera/" + plugin.country + "/");
             plugin.env.put("AIRBITZ_STATS_KEY", AirbitzApplication.getContext().getString(R.string.airbitz_business_directory_key));
             mPlugins.add(plugin);
+
+            plugin = new Plugin();
+            plugin.pluginId = "com.foldapp";
+            plugin.sourceFile = "file:///android_asset/foldapp.html";
+            plugin.name = "FoldApp (Alpha)";
+            plugin.provider = "foldapp";
+            mPlugins.add(plugin);
         }
     }
 
