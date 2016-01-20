@@ -62,6 +62,7 @@ public class HelpFragment extends BaseFragment {
     public static final int SEND_CONFIRMATION_INSUFFICIENT_FUNDS = R.raw.info_insufficient_funds;
     public static final int SETTINGS = R.raw.info_settings;
     public static final int SPEND_LIMITS = R.raw.info_spend_limits;
+    public static final int ELECTRUM_SERVER = R.raw.info_electrum_server;
     public static final int TRANSACTION_DETAILS = R.raw.info_transaction_details;
     public static final int TRANSACTIONS = R.raw.info_wallet;
     public static final int WALLETS = R.raw.info_wallets;

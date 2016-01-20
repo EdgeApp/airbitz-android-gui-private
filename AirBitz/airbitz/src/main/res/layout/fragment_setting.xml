@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     style="@style/SettingsFragment">
 
-    <ScrollView 
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -173,6 +173,11 @@
                 <Button
                     android:id="@+id/settings_button_two_factor_authentication"
                     android:text="@string/settings_button_two_factor_authentication"
+                    style="@style/SettingsButton" />
+
+                <Button
+                    android:id="@+id/settings_button_electrum_server"
+                    android:text="@string/settings_button_electrum_server"
                     style="@style/SettingsButton" />
 
                 <Switch
