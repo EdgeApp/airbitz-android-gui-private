@@ -6,14 +6,19 @@ if [[ ! -n $(which swig) ]]; then
     exit 1
 fi
 
-if [[ $# -eq 1 ]]; then
+if [ $# -eq 1 ] && [ $1 != "testnet" ]; then
     BUILD_DIR=$1
 fi
 
 BASE=$(pwd)
 CORE_PATH="$BASE/../airbitz-core"
-BUILD_PATH=${BUILD_DIR:-$CORE_PATH/deps/build}
+if [ ${@: -1} == "testnet" ]; then
+  BUILD_PATH=${BUILD_DIR:-$CORE_PATH/deps/build-testnet}
+else
+  BUILD_PATH=${BUILD_DIR:-$CORE_PATH/deps/build}
+fi
 WALLET_PATH="$BASE/AirBitz/libs/airbitz-core/src/main"
+
 
 # Copy the core build output into the jni folder:
 mkdir -p $WALLET_PATH/jni/

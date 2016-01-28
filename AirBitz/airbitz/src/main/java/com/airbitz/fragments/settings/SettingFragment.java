@@ -101,6 +101,7 @@ public class SettingFragment extends BaseFragment implements CurrencyFragment.On
     AlertDialog mDistanceDialog;
     private Button mCategoryContainer;
     private Button mSpendingLimitContainer;
+    private Button mElectrumServerContainer;
     private Button mTwoFactorContainer;
     private RadioGroup mDenominationGroup;
     private RadioButton mBitcoinButton;
@@ -206,6 +207,15 @@ public class SettingFragment extends BaseFragment implements CurrencyFragment.On
             @Override
             public void onClick(View view) {
                 Fragment fragment = new SpendingLimitsFragment();
+                ((NavigationActivity) getActivity()).pushFragment(fragment, NavigationActivity.Tabs.MORE.ordinal());
+            }
+        });
+
+        mElectrumServerContainer = (Button) mView.findViewById(R.id.settings_button_electrum_server);
+        mElectrumServerContainer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Fragment fragment = new ElectrumServerFragment();
                 ((NavigationActivity) getActivity()).pushFragment(fragment, NavigationActivity.Tabs.MORE.ordinal());
             }
         });

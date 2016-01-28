@@ -1,0 +1,88 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    style="@style/SettingsFragment">
+
+    <include layout="@layout/layout_toolbar_title" />
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
+        android:animateLayoutChanges="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25.2dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp">
+
+            <TextView
+                android:id="@+id/fragment_electrum_server_instruction_text"
+                android:layout_below="@id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:text="@string/fragment_electrum_server_show_instruction"
+                android:visibility="gone" />
+
+            <Switch
+                android:id="@+id/fragment_electrum_server_airbitz_toggle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:checked="false"
+                android:switchMinWidth="0dp"
+                android:text="@string/fragment_electrum_server_airbitz_toggle_title"
+                android:textColor="@android:color/black"
+                android:textOff=""
+                android:textOn=""
+                android:singleLine="true" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:minHeight="5dp" />
+
+            <EditText
+                android:id="@+id/fragment_electrum_server_url_edittext"
+                android:hint="@string/fragment_electrum_server_hint_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri"
+                android:layout_marginBottom="10dp"
+                android:layout_marginTop="10dp" />
+
+            <Switch
+                android:id="@+id/fragment_electrum_server_ssl_toggle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:checked="false"
+                android:switchMinWidth="0dp"
+                android:text="@string/fragment_electrum_server_ssl_toggle_title"
+                android:textColor="@android:color/black"
+                android:textOff=""
+                android:textOn=""
+                android:singleLine="true" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:minHeight="10dp" />
+
+            <Button
+                android:id="@+id/fragment_electrum_server_button_logout"
+                android:layout_marginBottom="10dp"
+                android:text="@string/fragment_electrum_server_save"
+                style="@style/BlueButton" />
+
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

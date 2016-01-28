@@ -255,6 +255,7 @@
     <string name="settings_button_change_categories">Change Categories</string>
     <string name="settings_button_change_spending_limits">Spending Limits</string>
     <string name="settings_button_two_factor_authentication">2 Factor (Enhanced Security)</string>
+    <string name="settings_button_electrum_server">Bitcoin Server</string>
     <string name="settings_button_change_password">Change password</string>
     <string name="settings_button_pin">Change PIN</string>
     <string name="settings_button_recovery">Change Recovery Questions</string>
@@ -303,6 +304,14 @@
     <string name="fragment_spending_limits_hint_text">0</string>
     <string name="fragment_spending_limits_incorrect_password">Incorrect Password</string>
     <string name="fragment_spending_limits_daily_subtext">(Requires password above daily limit)</string>
+
+    <!-- Strings for Electrum (Stratum) Server Settings -->
+    <string name="fragment_electrum_server_title">Bitcoin Server</string>
+    <string name="fragment_electrum_server_show_instruction">To use your own Electrum Server instead of the Airbitz servers.</string>
+    <string name="fragment_electrum_server_airbitz_toggle_title">Use Airbitz Servers</string>
+    <string name="fragment_electrum_server_save">Save</string>
+    <string name="fragment_electrum_server_hint_text">URI:Port</string>
+    <string name="fragment_electrum_server_ssl_toggle_title">SSL</string>
 
     <!-- Strings for Category Fragment -->
     <string name="fragment_category_cancel_title">Cancel Changes</string>

@@ -863,6 +863,28 @@ public class CoreAPI {
     }
 
 
+    //****** Stratum Server
+    public String GetStratumServer() {
+        AccountSettings settings = coreSettings();
+        if (settings != null) {
+            return settings.settings().getSzStratumServer();
+        }
+        return "";
+    }
+
+    public void SetStratumServer(String server) {
+        AccountSettings settings = coreSettings();
+        if (settings == null) {
+            return;
+        }
+        settings.settings().setSzStratumServer(server);
+        try {
+            settings.save();
+        } catch (AirbitzException e) {
+            Log.d(TAG, "", e);
+        }
+    }
+
     private AccountSettings mCoreSettings;
     public AccountSettings coreSettings() {
         if (mCoreSettings != null) {
