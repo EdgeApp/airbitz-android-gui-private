@@ -66,6 +66,7 @@ import com.airbitz.fragments.wallet.ExportFragment;
 import com.airbitz.fragments.wallet.TransactionDetailFragment;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import co.airbitz.core.Transaction;
@@ -117,7 +118,6 @@ public class AuthFragment extends WalletBaseFragment
         mListTransaction = (ListView) mView.findViewById(R.id.listview_transaction);
         mListTransaction.setAdapter(mTransactionAdapter);
 
-
         mListTransaction.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -144,6 +144,20 @@ public class AuthFragment extends WalletBaseFragment
         });
 //        updateBalanceBar();
 //        updateSendRequestButtons();
+
+        final Handler handler = new Handler();
+
+        handler.postDelayed( new Runnable() {
+
+            @Override
+            public void run() {
+                mTransactionAdapter.notifyDataSetChanged();
+                handler.postDelayed( this, 500 );
+
+            }
+        }, 500 );
+
+
         return mView;
     }
 
@@ -175,7 +189,9 @@ public class AuthFragment extends WalletBaseFragment
         case android.R.id.home:
             return onBackPress();
         case R.id.action_add:
-            ExportFragment.pushFragment(mActivity);
+            mActivity.switchFragmentThread(NavigationActivity.Tabs.SEND.ordinal());
+//            Fragment details = new SendFragment();
+//            mActivity.pushFragment(details, NavigationActivity.Tabs.SEND.ordinal());
         default:
             return super.onOptionsItemSelected(item);
         }

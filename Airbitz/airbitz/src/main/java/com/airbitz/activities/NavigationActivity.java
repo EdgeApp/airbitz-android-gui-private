@@ -939,10 +939,10 @@ public class NavigationActivity extends ActionBarActivity
         Fragment frag = new TransactionListFragment();
         bundle.putBoolean(Constants.WALLET_CREATE, true);
         frag.setArguments(bundle);
-        mNavStacks[Tabs.WALLET.ordinal()].clear();
-        mNavStacks[Tabs.WALLET.ordinal()].add(frag);
-
-        switchFragmentThread(Tabs.WALLET.ordinal());
+//        mNavStacks[Tabs.WALLET.ordinal()].clear();
+//        mNavStacks[Tabs.WALLET.ordinal()].add(frag);
+//
+//        switchFragmentThread(Tabs.WALLET.ordinal());
     }
 
     public void clearBD() {
@@ -1302,9 +1302,9 @@ public class NavigationActivity extends ActionBarActivity
             mDataUri = null;
         } else {
             resetFragmentThreadToBaseFragment(mNavThreadId);
-            AirbitzApplication.setLastNavTab(Tabs.WALLET.ordinal());
-            resetFragmentThreadToBaseFragment(Tabs.WALLET.ordinal());
-            switchFragmentThread(Tabs.WALLET.ordinal(), false);
+            AirbitzApplication.setLastNavTab(Tabs.AUTH.ordinal());
+            resetFragmentThreadToBaseFragment(Tabs.AUTH.ordinal());
+            switchFragmentThread(Tabs.AUTH.ordinal(), false);
         }
         checkFirstWalletSetup();
 
@@ -1457,27 +1457,26 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     private Fragment getNewBaseFragement(int id) {
-        return new AuthFragment();
-//        switch (id) {
-//            case 0:
-//                return new BusinessDirectoryFragment();
-//            case 1:
-//                return new RequestFragment();
-//            case 2:
-//                return new SendFragment();
-//            case 3:
-//                return new TransactionListFragment();
-//            case 4:
-//                return new WalletsFragment();
-//            case 5:
-//                return new SettingFragment();
-//            case 6:
-//                return new BuySellFragment();
-//            case 7:
-//                return new GiftCardFragment();
-//            default:
-//                return null;
-//        }
+        switch (id) {
+            case 0:
+                return new BusinessDirectoryFragment();
+            case 1:
+                return new RequestFragment();
+            case 2:
+                return new SendFragment();
+            case 3:
+                return new AuthFragment();
+            case 4:
+                return new WalletsFragment();
+            case 5:
+                return new SettingFragment();
+            case 6:
+                return new BuySellFragment();
+            case 7:
+                return new GiftCardFragment();
+            default:
+                return null;
+        }
     }
 
     public boolean networkIsAvailable() {
@@ -1518,7 +1517,7 @@ public class NavigationActivity extends ActionBarActivity
         return false;
     }
 
-    public enum Tabs {BD, REQUEST, SEND, WALLET, WALLETS, MORE, BUYSELL, SHOP, AUTH}
+    public enum Tabs {BD, REQUEST, SEND, AUTH, WALLETS, MORE, BUYSELL, SHOP, WALLET}
 
     //************************ Connectivity support
 
@@ -2415,7 +2414,7 @@ public class NavigationActivity extends ActionBarActivity
             resetDrawerButtons(mDrawerDirectory);
         } else if (mNavThreadId == Tabs.WALLETS.ordinal()) {
                 resetDrawerButtons(mDrawerWallets);
-        } else if (mNavThreadId == Tabs.WALLET.ordinal()) {
+        } else if (mNavThreadId == Tabs.AUTH.ordinal()) {
                 resetDrawerButtons(mDrawerTxs);
         } else if (mNavThreadId == Tabs.SEND.ordinal()) {
             resetDrawerButtons(mDrawerSend);

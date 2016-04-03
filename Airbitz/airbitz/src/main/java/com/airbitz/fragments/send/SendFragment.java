@@ -175,38 +175,34 @@ public class SendFragment extends ScanFragment {
         hideProcessing();
         try {
             ParsedUri parsed = AirbitzCore.getApi().parseUri(text);
+            String label = parsed.label();
+            String otp = parsed.otpKey();
+
+            Log.d(TAG, "label=" + label);
+            Log.d(TAG, "otpKey=" + otp);
+
             switch (parsed.type()) {
-            case BITID:
-                askBitidLogin(parsed.bitid(), text);
-                return;
-            case PAYMENT_PROTO:
-                showProcessing();
-                mPaymentTask = new PaymentProtoFetch(parsed);
-                mPaymentTask.execute();
-                return;
-            case ADDRESS:
-                launchSendConfirmation(parsed, null, null);
-                return;
-            case PRIVATE_KEY:
-                askImportOrSend(parsed);
-                return;
             default:
+                if (parsed.otpKey() != null) {
+                    mAccount.data("co.airbitz.authinator").set(label, otp);
+                    mActivity.switchFragmentThread(NavigationActivity.Tabs.AUTH.ordinal());
+                }
                 break;
             }
         } catch (AirbitzException e) {
             AirbitzCore.loge(e.getMessage());
         }
-        Uri uri = Uri.parse(text);
-        Log.d(TAG, uri.toString());
-        if (uri != null && ("airbitz-ret".equals(uri.getScheme())
-                    || "bitcoin-ret".equals(uri.getScheme())
-                    || "x-callback-url".equals(uri.getHost()))) {
-            mActivity.handleRequestForPaymentUri(uri);
-        } else {
-            showMessageAndStartCameraDialog(
-                R.string.fragment_send_failure_title,
-                R.string.fragment_send_confirmation_invalid_bitcoin_address);
-        }
+//        Uri uri = Uri.parse(text);
+//        Log.d(TAG, uri.toString());
+//        if (uri != null && ("airbitz-ret".equals(uri.getScheme())
+//                    || "bitcoin-ret".equals(uri.getScheme())
+//                    || "x-callback-url".equals(uri.getHost()))) {
+//            mActivity.handleRequestForPaymentUri(uri);
+//        } else {
+//            showMessageAndStartCameraDialog(
+//                R.string.fragment_send_failure_title,
+//                R.string.fragment_send_confirmation_invalid_bitcoin_address);
+//        }
     }
 
     private void askImportOrSend(final ParsedUri parsed) {

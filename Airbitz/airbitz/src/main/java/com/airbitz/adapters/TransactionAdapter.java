@@ -48,6 +48,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import co.airbitz.core.Account;
+import co.airbitz.core.AirbitzCore;
 import co.airbitz.core.Transaction;
 import co.airbitz.core.Utils;
 import co.airbitz.core.Wallet;
@@ -63,6 +64,8 @@ import com.squareup.picasso.Callback;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -78,6 +81,7 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
     private String mCurrencyCode;
     private Account mAccount;
     private List<Transaction> mListTransaction;
+    private List<String> mListOTPs;
     private long[] mRunningSatoshi;
     private int mRound, mDimen;
 
@@ -93,6 +97,8 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
         mAccount = AirbitzApplication.getAccount();
         mPicasso = AirbitzApplication.getPicasso();
 
+        mListOTPs = mAccount.data("co.airbitz.authinator").list();
+
         mFormatter = new SimpleDateFormat("MMM dd h:mm aa", Locale.getDefault());
         mRound = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, mContext.getResources().getDisplayMetrics());
         mDimen = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300, mContext.getResources().getDisplayMetrics());
@@ -104,17 +110,16 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
     @Override
     public int getCount() {
 
-        if (mListTransaction.size() == 0) {
-            return 2;
+        if (mListOTPs.size() == 0) {
+            return 1;
         } else {
-            return mListTransaction.size();
+            return mListOTPs.size();
         }
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-//        if (mListTransaction.size() == 0) {
-            return getEmptyView(position, convertView, parent);
+        return getEmptyView(position, convertView, parent);
 //            if (mLoading) {
 //                return getLoadingView(position, convertView, parent);
 //            } else {
@@ -130,8 +135,30 @@ public class TransactionAdapter extends ArrayAdapter<Transaction> {
         TextView siteNameTextView = (TextView) convertView.findViewById(R.id.textview_sitename);
         TextView tokenTextView = (TextView) convertView.findViewById(R.id.textview_token);
 
-        siteNameTextView.setText("HellYeah.com");
-        tokenTextView.setText("7TFG6HA");
+        if (mListOTPs.size() == 0) {
+            siteNameTextView.setText("HellYeah.com");
+            tokenTextView.setText("7TFG6HA");
+        } else {
+            String key = mListOTPs.get(position);
+            String val = mAccount.data("co.airbitz.authinator").get(key);
+            siteNameTextView.setText(key);
+            Utils utils = new Utils();
+            String token = utils.totpGenerate(val);
+            tokenTextView.setText(token);
+
+            Date now = new Date();
+            Long longTime = new Long(now.getTime()/1000);
+            if ((longTime.intValue() % 30) > 23) {
+                if ((longTime.intValue() % 2) == 0) {
+                    tokenTextView.setTextColor(mContext.getResources().getColor(R.color.red));
+                } else {
+                    tokenTextView.setTextColor(mContext.getResources().getColor(R.color.btn_orange));
+                }
+            } else {
+                tokenTextView.setTextColor(mContext.getResources().getColor(R.color.send_blue));
+            }
+
+        }
         return convertView;
     }
 //
