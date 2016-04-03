@@ -15,6 +15,7 @@
     <string name="string_paste">Paste</string>
     <string name="string_paste_address">Paste %1$s</string>
     <string name="string_search">Search</string>
+    <string name="string_add_2fa">Add 2FA</string>
     <string name="string_done">DONE</string>
     <string name="string_rename">Rename</string>
     <string name="string_delete">Delete</string>
@@ -29,6 +30,7 @@
     <string name="string_refresh">Refresh</string>
     <string name="string_loading">Loading...</string>
     <string name="string_no_transactions">No transactions</string>
+    <string name="string_no_2fa_codes">No 2FA Codes</string>
     <string name="string_back_button">Back button returns to the previous screen</string>
     <string name="string_help_button">Help button shows help for this screen</string>
     <string name="string_add_button">Add button adds a new wallet</string>

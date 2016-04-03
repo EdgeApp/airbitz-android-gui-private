@@ -167,13 +167,13 @@ public class TransactionListFragment extends WalletBaseFragment
         mSwipeLayout.setOnRefreshListener(this);
 
         mTransactionAdapter = new TransactionAdapter(mActivity, mTransactions);
-        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
-        if (mWallet != null) {
-            mTransactionAdapter.setWallet(mWallet);
-            mTransactionAdapter.setLoading(false);
-        } else {
-            mTransactionAdapter.setLoading(true);
-        }
+//        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
+//        if (mWallet != null) {
+//            mTransactionAdapter.setWallet(mWallet);
+//            mTransactionAdapter.setLoading(false);
+//        } else {
+//            mTransactionAdapter.setLoading(true);
+//        }
         mListTransaction = (ListView) mView.findViewById(R.id.listview_transaction);
         if (mListHeaderView == null) {
             mListHeaderView = (ViewGroup) inflater.inflate(R.layout.custom_transaction_listview_header, null, false);
@@ -311,9 +311,6 @@ public class TransactionListFragment extends WalletBaseFragment
                 showSearch();
             }
             return true;
-        case R.id.action_export:
-            ExportFragment.pushFragment(mActivity);
-            return true;
         case R.id.action_help:
             mActivity.pushFragment(new HelpFragment(HelpFragment.TRANSACTIONS));
             return true;
@@ -342,7 +339,7 @@ public class TransactionListFragment extends WalletBaseFragment
     public boolean hideSearch() {
         if (super.hideSearch()) {
             if (!mLoading) {
-                mTransactionAdapter.setSearch(false);
+//                mTransactionAdapter.setSearch(false);
                 startTransactionTask();
             }
             return true;
@@ -385,9 +382,9 @@ public class TransactionListFragment extends WalletBaseFragment
         if (mTransactionTask != null) {
             mTransactionTask.cancel(false);
         }
-        mTransactionAdapter.setLoading(mLoading);
-        mTransactionAdapter.setWallet(mWallet);
-        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
+//        mTransactionAdapter.setLoading(mLoading);
+//        mTransactionAdapter.setWallet(mWallet);
+//        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
 
         mTransactionTask = new TransactionTask(mSearchQuery, mWallet);
         mTransactionTask.execute();
@@ -396,7 +393,7 @@ public class TransactionListFragment extends WalletBaseFragment
     private void updateTransactionsListView(List<Transaction> transactions) {
         mTransactions.clear();
         mTransactions.addAll(transactions);
-        mTransactionAdapter.createRunningSatoshi();
+//        mTransactionAdapter.createRunningSatoshi();
         mTransactionAdapter.notifyDataSetChanged();
 
         updateBalanceBar();
@@ -435,7 +432,7 @@ public class TransactionListFragment extends WalletBaseFragment
     protected void updateBalanceBar() {
         // super.updateBalanceBar();
         positionBalanceBar();
-        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
+//        mTransactionAdapter.setIsBitcoin(mOnBitcoinMode);
         mTransactionAdapter.notifyDataSetChanged();
         updateBalances();
     }

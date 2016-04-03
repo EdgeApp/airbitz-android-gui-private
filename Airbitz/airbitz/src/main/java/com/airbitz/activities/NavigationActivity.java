@@ -104,6 +104,7 @@ import com.airbitz.api.Constants;
 import com.airbitz.api.CoreWrapper;
 import com.airbitz.api.DirectoryWrapper;
 import com.airbitz.api.directory.DirectoryApi;
+import com.airbitz.fragments.AuthFragment;
 import com.airbitz.fragments.BaseFragment;
 import com.airbitz.fragments.HelpFragment;
 import com.airbitz.fragments.directory.BusinessDirectoryFragment;
@@ -310,33 +311,33 @@ public class NavigationActivity extends ActionBarActivity
         SubActionButton sendAction = itemBuilder.setLayoutParams(menuLayout).setContentView(sendButton).build();
         SubActionButton txAction = itemBuilder.setLayoutParams(menuLayout).setContentView(txButton).build();
 
-        mActionMenu =
-            new FloatingActionMenu.Builder(this)
-                                  .addSubActionView(receiveAction)
-                                  .addSubActionView(sendAction)
-                                  .addSubActionView(txAction)
-                                  .attachTo(mActionButton)
-                                  .contentView(findViewById(R.id.action_menu_container))
-                                  .build();
-
-        receiveAction.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                onNavBarSelected(Tabs.REQUEST.ordinal());
-            }
-        });
-
-        sendAction.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                onNavBarSelected(Tabs.SEND.ordinal());
-            }
-        });
-
-        txAction.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                onNavBarSelected(Tabs.WALLET.ordinal());
-            }
-        });
-
+//        mActionMenu =
+//            new FloatingActionMenu.Builder(this)
+//                                  .addSubActionView(receiveAction)
+//                                  .addSubActionView(sendAction)
+//                                  .addSubActionView(txAction)
+//                                  .attachTo(mActionButton)
+//                                  .contentView(findViewById(R.id.action_menu_container))
+//                                  .build();
+//
+//        receiveAction.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View view) {
+//                onNavBarSelected(Tabs.REQUEST.ordinal());
+//            }
+//        });
+//
+//        sendAction.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View view) {
+//                onNavBarSelected(Tabs.SEND.ordinal());
+//            }
+//        });
+//
+//        txAction.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View view) {
+//                onNavBarSelected(Tabs.WALLET.ordinal());
+//            }
+//        });
+//
         mFragmentContainer = findViewById(R.id.fragment_container);
         mFragmentLayout = (LinearLayout) findViewById(R.id.activityLayout);
         mNotificationLayout = findViewById(R.id.notification);
@@ -801,8 +802,8 @@ public class NavigationActivity extends ActionBarActivity
         showModalProgress(false);
 
         if (isAtNavStackEntry()) {
-            if (AirbitzApplication.isLoggedIn() && Tabs.WALLET.ordinal() != mNavThreadId) {
-                onNavBarSelected(Tabs.WALLET.ordinal());
+            if (AirbitzApplication.isLoggedIn() && Tabs.AUTH.ordinal() != mNavThreadId) {
+//                onNavBarSelected(Tabs.WALLET.ordinal());
             } else {
                 ShowExitMessageDialog("", String.format(
                     getString(R.string.string_exit_app_question),
@@ -1287,13 +1288,13 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     public void UserJustLoggedIn(boolean passwordLogin, boolean showLoadingMessages) {
-        mWalletsLoadedReceiver.mShowMessages = showLoadingMessages;
+//        mWalletsLoadedReceiver.mShowMessages = showLoadingMessages;
         UserJustLoggedIn(passwordLogin);
     }
 
     public void UserJustLoggedIn(boolean passwordLogin) {
-        showNavBar();
-        checkDailyLimitPref();
+//        showNavBar();
+//        checkDailyLimitPref();
         Account account = AirbitzApplication.getAccount();
         account.startBackgroundTasks();
         if (mDataUri != null) {
@@ -1456,26 +1457,27 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     private Fragment getNewBaseFragement(int id) {
-        switch (id) {
-            case 0:
-                return new BusinessDirectoryFragment();
-            case 1:
-                return new RequestFragment();
-            case 2:
-                return new SendFragment();
-            case 3:
-                return new TransactionListFragment();
-            case 4:
-                return new WalletsFragment();
-            case 5:
-                return new SettingFragment();
-            case 6:
-                return new BuySellFragment();
-            case 7:
-                return new GiftCardFragment();
-            default:
-                return null;
-        }
+        return new AuthFragment();
+//        switch (id) {
+//            case 0:
+//                return new BusinessDirectoryFragment();
+//            case 1:
+//                return new RequestFragment();
+//            case 2:
+//                return new SendFragment();
+//            case 3:
+//                return new TransactionListFragment();
+//            case 4:
+//                return new WalletsFragment();
+//            case 5:
+//                return new SettingFragment();
+//            case 6:
+//                return new BuySellFragment();
+//            case 7:
+//                return new GiftCardFragment();
+//            default:
+//                return null;
+//        }
     }
 
     public boolean networkIsAvailable() {
@@ -1516,7 +1518,7 @@ public class NavigationActivity extends ActionBarActivity
         return false;
     }
 
-    public enum Tabs {BD, REQUEST, SEND, WALLET, WALLETS, MORE, BUYSELL, SHOP}
+    public enum Tabs {BD, REQUEST, SEND, WALLET, WALLETS, MORE, BUYSELL, SHOP, AUTH}
 
     //************************ Connectivity support
 
@@ -2429,42 +2431,42 @@ public class NavigationActivity extends ActionBarActivity
     }
 
     private void resetDrawerButtons(Button button) {
-        mDrawerDirectory.setSelected(false);
-        mDrawerRequest.setSelected(false);
-        mDrawerSend.setSelected(false);
-        mDrawerTxs.setSelected(false);
-        mDrawerWallets.setSelected(false);
-        mDrawerBuySell.setSelected(false);
-        mDrawerShop.setSelected(false);
-        // mDrawerImport.setSelected(false);
-        mDrawerSettings.setSelected(false);
-        mDrawerLogout.setSelected(false);
-        if (button != null) {
-            button.setSelected(true);
-        }
-        mActionMenu.close(true);
+//        mDrawerDirectory.setSelected(false);
+//        mDrawerRequest.setSelected(false);
+//        mDrawerSend.setSelected(false);
+//        mDrawerTxs.setSelected(false);
+//        mDrawerWallets.setSelected(false);
+//        mDrawerBuySell.setSelected(false);
+//        mDrawerShop.setSelected(false);
+//        // mDrawerImport.setSelected(false);
+//        mDrawerSettings.setSelected(false);
+//        mDrawerLogout.setSelected(false);
+//        if (button != null) {
+//            button.setSelected(true);
+//        }
+//        mActionMenu.close(true);
     }
 
     private void updateDrawer(boolean loggedIn) {
-        if (loggedIn) {
-            mDrawerAccount.setText(AirbitzApplication.getUsername());
-            mDrawerLogin.setVisibility(View.GONE);
-            mDrawerExchange.setVisibility(View.VISIBLE);
-            mDrawerLayoutAccount.setVisibility(View.VISIBLE);
-            mDrawerLogout.setVisibility(View.VISIBLE);
-            List<String> users = otherAccounts(AirbitzApplication.getUsername());
-            if (users.size() > 0) {
-                mDrawerAccountArrow.setVisibility(View.VISIBLE);
-            } else {
-                mDrawerAccountArrow.setVisibility(View.INVISIBLE);
-            }
-        } else {
-            mDrawerLogin.setVisibility(View.VISIBLE);
-            mDrawerExchange.setVisibility(View.INVISIBLE);
-            mDrawerLayoutAccount.setVisibility(View.GONE);
-            mDrawerLogout.setVisibility(View.GONE);
-        }
-        showOthersList(AirbitzApplication.getUsername(), false);
+//        if (loggedIn) {
+//            mDrawerAccount.setText(AirbitzApplication.getUsername());
+//            mDrawerLogin.setVisibility(View.GONE);
+//            mDrawerExchange.setVisibility(View.VISIBLE);
+//            mDrawerLayoutAccount.setVisibility(View.VISIBLE);
+//            mDrawerLogout.setVisibility(View.VISIBLE);
+//            List<String> users = otherAccounts(AirbitzApplication.getUsername());
+//            if (users.size() > 0) {
+//                mDrawerAccountArrow.setVisibility(View.VISIBLE);
+//            } else {
+//                mDrawerAccountArrow.setVisibility(View.INVISIBLE);
+//            }
+//        } else {
+//            mDrawerLogin.setVisibility(View.VISIBLE);
+//            mDrawerExchange.setVisibility(View.INVISIBLE);
+//            mDrawerLayoutAccount.setVisibility(View.GONE);
+//            mDrawerLogout.setVisibility(View.GONE);
+//        }
+//        showOthersList(AirbitzApplication.getUsername(), false);
     }
 
     public void lockDrawer() {
