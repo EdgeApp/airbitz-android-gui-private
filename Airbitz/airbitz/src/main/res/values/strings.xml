@@ -402,7 +402,7 @@
     <string name="fragment_wallets_archive_help">To archive a wallet, tap and hold the 3 dots to the right of a wallet and drag it below the [ARCHIVE] header</string>
 
     <!-- Strings for Wallet fragment -->
-    <string name="fragment_wallet_title">Transactions</string>
+    <string name="fragment_wallet_title">The Airbitz Authem Authinator</string>
     <string name="fragment_wallet_export_button_description">Button to export a wallet</string>
     <string name="fragment_wallet_unconfirmed">Pending</string>
     <string name="fragment_wallet_confirmed">Confirmed</string>

@@ -211,7 +211,7 @@ public class WalletBaseFragment extends BaseFragment
             } else {
                 finishHideWallets();
             }
-            mDropdownIcon.setVisibility(View.VISIBLE);
+//            mDropdownIcon.setVisibility(View.VISIBLE);
         } else {
             mDropdownIcon.setVisibility(View.GONE);
         }
@@ -312,10 +312,10 @@ public class WalletBaseFragment extends BaseFragment
         mWalletList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                WalletWrapper w = mWrapped.get(i);
-                if (w.isSynced()) {
-                    walletChanged(mWallets.get(i));
-                }
+//                WalletWrapper w = mWrapped.get(i);
+//                if (w.isSynced()) {
+//                    walletChanged(mWallets.get(i));
+//                }
             }
         });
         mAdapter = new WalletChoiceAdapter(mActivity, mWrapped);
