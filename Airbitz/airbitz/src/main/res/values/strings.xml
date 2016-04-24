@@ -480,7 +480,8 @@
     <string name="transaction_details_advanced_total_sent">"Total Sent"</string>
     <string name="transaction_details_advanced_source">"Source"</string>
     <string name="transaction_details_advanced_destination">"Destination"</string>
-    <string name="transaction_details_advanced_miner_fee">"Miner Fee"</string>
+    <string name="transaction_details_advanced_miner_fee">"Transaction Fee"</string>
+    <string name="transaction_details_advanced_confirmations">"Confirmations"</string>
     <string name="transaction_details_advanced_fee">" fee"</string>
     <string name="transaction_details_transaction_save_failed">Unable to save all transaction data</string>
 

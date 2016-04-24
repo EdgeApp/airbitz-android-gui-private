@@ -1,0 +1,15 @@
+#mkdir AirBitz/airbitz/src/main/res/raw/
+#mkdir AirBitz/airbitz/src/main/res/raw-es/
+#mkdir AirBitz/airbitz/src/main/res/raw-pt/
+#mkdir AirBitz/airbitz/src/main/res/raw-hi/
+
+cp -a ../airbitz-ios-gui/Airbitz/Resources/html/Base.lproj/*.html AirBitz/airbitz/src/main/res/raw/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/html/es-MX.lproj/*.html AirBitz/airbitz/src/main/res/raw-es/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/html/pt-BR.lproj/*.html AirBitz/airbitz/src/main/res/raw-pt/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/html/hi-IN.lproj/*.html AirBitz/airbitz/src/main/res/raw-hi/
+
+cp -a ../airbitz-ios-gui/Airbitz/Resources/Text/Base.lproj/*.txt AirBitz/airbitz/src/main/res/raw/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/Text/es-MX.lproj/*.txt AirBitz/airbitz/src/main/res/raw-es/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/Text/pt-BR.lproj/*.txt AirBitz/airbitz/src/main/res/raw-pt/
+cp -a ../airbitz-ios-gui/Airbitz/Resources/Text/hi-IN.lproj/*.txt AirBitz/airbitz/src/main/res/raw-hi/
+

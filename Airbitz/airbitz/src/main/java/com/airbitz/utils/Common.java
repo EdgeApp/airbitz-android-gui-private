@@ -170,6 +170,10 @@ public class Common {
     }
 
     public static String evaluateTextFile(Context ctx, int resId) {
+        String footer;
+        if (resId != R.raw.info_footer) {
+            footer = this.evaluateTextFile(ctx, R.raw.info_footer);
+        }
         String text = readRawTextFile(ctx, resId);
         String supportEmail = ctx.getString(R.string.app_support_email);
         String emailSupportTemplate =
@@ -185,15 +189,19 @@ public class Common {
         tags.put("[[abtag APP_TITLE]]", ctx.getString(R.string.app_name));
         tags.put("[[abtag APP_STORE_LINK]]", ctx.getString(R.string.appstore_link));
         tags.put("[[abtag PLAY_STORE_LINK]]", ctx.getString(R.string.playstore_link));
+        tags.put("[[abtag APP_DOWNLOAD_LINK]]", ctx.getString(R.string.request_footer_link));
         tags.put("[[abtag APP_HOMEPAGE]]", ctx.getString(R.string.app_homepage));
         tags.put("[[abtag APP_LOGO_WHITE_LINK]]", ctx.getString(R.string.logo_white_link));
         tags.put("[[abtag APP_DESIGNED_BY]]", ctx.getString(R.string.designed_by));
         tags.put("[[abtag APP_COMPANY_LOCATION]]", ctx.getString(R.string.company_location));
+        tags.put("[[abtag APP_SUPPORT_EMAIL]]", ctx.getString(R.string.app_support_email));
         tags.put("[[abtag APP_VERSION]]", getVersion(ctx));
-        tags.put("[[abtag REQUEST_FOOTER]]", ctx.getString(R.string.request_footer));
-        tags.put("[[abtag REQUEST_FOOTER_LINK_TITLE]]", ctx.getString(R.string.request_footer_link_title));
-        tags.put("[[abtag REQUEST_FOOTER_LINK]]", ctx.getString(R.string.request_footer_link));
-        tags.put("[[abtag REQUEST_FOOTER_CONTACT]]", ctx.getString(R.string.request_footer_contact));
+        tags.put("[[abtag INFO_FOOTER]]", footer);
+
+//        tags.put("[[abtag REQUEST_FOOTER]]", ctx.getString(R.string.request_footer));
+//        tags.put("[[abtag REQUEST_FOOTER_LINK_TITLE]]", ctx.getString(R.string.request_footer_link_title));
+//        tags.put("[[abtag REQUEST_FOOTER_LINK]]", ctx.getString(R.string.request_footer_link));
+//        tags.put("[[abtag REQUEST_FOOTER_CONTACT]]", ctx.getString(R.string.request_footer_contact));
         tags.put("[[abtag EMAIL_SUPPORT_TEMPLATE]]", emailSupportTemplate);
         tags.put("[[abtag PHONE_SUPPORT_TEMPLATE]]", phoneSupportTemplate);
 
