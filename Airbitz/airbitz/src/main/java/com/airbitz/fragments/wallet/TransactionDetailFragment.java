@@ -1044,6 +1044,23 @@ public class TransactionDetailFragment extends WalletBaseFragment
             s.append(Utils.formatSatoshi(mAccount, feesSatoshi, true))
                     .setSpan(new ForegroundColorSpan(Color.BLACK), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             s.setSpan(new StyleSpan(Typeface.NORMAL), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.append("\n\n");
+
+            //Confirmtions
+            long confirmations = 0;
+            if (tx.height() > 0) {
+                confirmations = mWallet.blockHeight() - tx.height();
+            }
+
+            start = s.length();
+            s.append(getString(R.string.transaction_details_advanced_confirmations)).setSpan(new ForegroundColorSpan(Color.BLACK), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.append("\n");
+
+            start = s.length();
+            s.append(String.valueOf(confirmations))
+                    .setSpan(new ForegroundColorSpan(Color.BLACK), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new StyleSpan(Typeface.NORMAL), start, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
             mActivity.pushFragment(new HelpFragment(s), NavigationActivity.Tabs.WALLET.ordinal());
         } else {

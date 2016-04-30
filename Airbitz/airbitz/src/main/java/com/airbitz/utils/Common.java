@@ -170,9 +170,9 @@ public class Common {
     }
 
     public static String evaluateTextFile(Context ctx, int resId) {
-        String footer;
+        String footer = "";
         if (resId != R.raw.info_footer) {
-            footer = this.evaluateTextFile(ctx, R.raw.info_footer);
+            footer = Common.evaluateTextFile(ctx, R.raw.info_footer);
         }
         String text = readRawTextFile(ctx, resId);
         String supportEmail = ctx.getString(R.string.app_support_email);
