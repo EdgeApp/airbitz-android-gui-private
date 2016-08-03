@@ -536,13 +536,13 @@ public class PluginFramework {
         }
 
         @JavascriptInterface
-        public void requestSpend(String cbid, String uuid, String address, long amountSatoshi,
+        public void createSpendRequest(String cbid, String uuid, String address, long amountSatoshi,
                                  double amountFiat, String label, String category, String notes, long bizId) {
             handler.launchSend(cbid, uuid, address, amountSatoshi, null, 0, amountFiat, label, category, notes, bizId, false);
         }
 
         @JavascriptInterface
-        public void requestSpend2(String cbid, String uuid,
+        public void createSpendRequest2(String cbid, String uuid,
                                   String address, long amountSatoshi,
                                   String address2, long amountSatoshi2,
                                  double amountFiat, String label, String category, String notes, long bizId) {
