@@ -292,6 +292,9 @@ public class NavigationActivity extends ActionBarActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        FingerprintHandler handler = new FingerprintHandler(this);
+        handler.doFingerPrintAuth();
+
         if(getResources().getBoolean(R.bool.portrait_only)){
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
