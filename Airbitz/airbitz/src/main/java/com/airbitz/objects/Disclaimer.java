@@ -77,7 +77,7 @@ public class Disclaimer {
         Button button = (Button) mDisclaimerDialog.findViewById(R.id.button_agree);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                markDiscalimerSeen(context);
+                markDisclaimerSeen(context);
                 mAgreed = true;
                 mDisclaimerDialog.dismiss();
                 mDisclaimerDialog = null;
@@ -98,7 +98,7 @@ public class Disclaimer {
         return mAgreed;
     }
 
-    public static void markDiscalimerSeen(Context context) {
+    public static void markDisclaimerSeen(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(AirbitzApplication.PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(DISCLAIMER_AGREED, true);
